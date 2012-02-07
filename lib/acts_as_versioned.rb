@@ -213,7 +213,7 @@ module ActiveRecord #:nodoc:
             before_save  :set_new_version
             after_save   :save_version
             after_save   :clear_old_versions
-            after_remove :set_deleted_flag
+            after_destroy :set_deleted_flag
 
             unless options[:if_changed].nil?
               self.track_altered_attributes = true
