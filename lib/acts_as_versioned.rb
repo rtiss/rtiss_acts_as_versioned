@@ -213,6 +213,7 @@ module ActiveRecord #:nodoc:
             before_save  :set_new_version
             after_save   :save_version
             after_save   :clear_old_versions
+            after_delete :set_deleted_flag
 
             unless options[:if_changed].nil?
               self.track_altered_attributes = true
@@ -277,6 +278,15 @@ module ActiveRecord #:nodoc:
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.save
           end
+        end
+
+        def set_deleted_flag
+          rev = self.class.versioned_class.new
+          clone_versioned_model(self, rev)
+          rev.send("#{self.class.version_column}=", send(self.class.version_column))
+          rev.send("#{self.class.versioned_foreign_key}=", id)
+          rev.send("#{self.class.deleted_in_original_table_flag}=", true)
+          rev.save
         end
 
         # Clears old revisions if a limit is set with the :limit option in <tt>acts_as_versioned</tt>.
