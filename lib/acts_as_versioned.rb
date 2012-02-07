@@ -497,4 +497,26 @@ module ActiveRecord #:nodoc:
   end
 end
 
+# TISS extension: do not pull this.
+module ActiveRecord #:nodoc:
+  module ConnectionAdapters #:nodoc:
+    class TableDefinition
+      ## Erzeugt 4 Spalten created_at, updated_at, version, mutator_id die in 
+      ## jeder Daten-Tabelle notwendig sind. Verwendung:
+      ##  create_table :adresse do |t|
+      ##    t.standard_spalten
+      ##    t.string strasse, :size=>120
+      ##    t.string plz, :size=>4
+      ##  end
+      def standard_spalten
+        column(:created_at, :datetime)
+        column(:updated_at, :datetime)
+        column(:version, :integer, :default=>1)
+        column(:mutator_id, :integer, :default=>0)
+      end
+    end
+  end
+end
+
+
 ActiveRecord::Base.send :include, ActiveRecord::Acts::Versioned
