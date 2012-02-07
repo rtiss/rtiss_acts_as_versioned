@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 ## This is the rakegem gemspec template. Make sure you read and understand
 ## all of the comments. Some sections require modification, and others can
 ## be deleted if you don't need them. Once you understand the contents of
@@ -13,21 +15,21 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'acts_as_versioned'
-  s.version           = '0.6.0'
-  s.date              = '2010-07-19'
+  s.version           = '0.6.0-tiss'
+  s.date              = '2012-02-07'
   s.rubyforge_project = 'acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
   ## as you like.
-  s.summary     = "Add simple versioning to ActiveRecord models."
-  s.description = "Add simple versioning to ActiveRecord models."
+  s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
+  s.description = "Add simple versioning to ActiveRecord models (TISS version)."
 
   ## List the primary authors. If there are a bunch of authors, it's probably
   ## better to set the email to an email list or something. If you don't have
   ## a custom homepage, consider using your GitHub URL or the like.
-  s.authors  = ["Rick Olson"]
-  s.email    = 'technoweenie@gmail.com'
-  s.homepage = 'http://github.com/technoweenie/acts_as_versioned'
+  s.authors  = ["Rick Olson", "Johannes Thoma"]
+  s.email    = 'johannes.thoma@rise-world.com'
+  s.homepage = 'http://github.com/tiss/acts_as_versioned'
 
   ## This gets added to the $LOAD_PATH so that 'lib/NAME.rb' can be required as
   ## require 'NAME.rb' or'/lib/NAME/file.rb' can be as require 'NAME/file.rb'
