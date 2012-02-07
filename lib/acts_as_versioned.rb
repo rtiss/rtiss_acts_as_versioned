@@ -175,7 +175,8 @@ module ActiveRecord #:nodoc:
 
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
-          self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{base_class.name.demodulize.underscore}_h#{table_name_suffix}"
+          self.versioned_table_name         = options[:table_name]  || if self.table_name then "#{table_name}_h" else "#{table_name_prefix}#{base_class.name.demodulize.underscore}_h#{table_name_suffix}" end
+
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
           self.version_column               = options[:version_column]     || 'version'
           self.deleted_in_original_table_flag = options[:deleted_in_original_table_flag]     || 'deleted_in_original_table'
