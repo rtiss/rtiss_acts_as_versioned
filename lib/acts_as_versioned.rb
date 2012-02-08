@@ -268,17 +268,17 @@ module ActiveRecord #:nodoc:
               restored_record.id = id
               restored_record.save!
 
-              new_version = self.dup
+              new_version = clone
               new_version.version += 1
+              new_version.deleted_in_original_table = false
               if new_version.respond_to? :created_at
                 new_version.created_at = Time.now
               end
               new_version.save!
             end
 
-            def self.restore_deleted_version(id, version)
-              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
-              version_record.restore
+            def original_record_exists?
+              original_class.exists?(self.send original_class.versioned_foreign_key)
             end
           end
 
@@ -435,16 +435,17 @@ module ActiveRecord #:nodoc:
           end
         end
 
-        def original_record_exists?
-          original_class.exists?(self.send original_class.versioned_foreign_key)
-        end
-
         def find_newest_version
           self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
         end
 
         def find_version(version)
           self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}")
+        end
+
+        def self.restore_deleted_version(id, version)
+          version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
+          version_record.restore
         end
 
         protected
