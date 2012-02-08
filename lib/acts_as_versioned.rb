@@ -186,8 +186,7 @@ module ActiveRecord #:nodoc:
           self.non_versioned_columns        = [self.primary_key, inheritance_column, self.version_column, 'lock_version', versioned_inheritance_column] + options[:non_versioned_columns].to_a.map(&:to_s)
           self.version_association_options  = {
                                                 :class_name  => "#{self.to_s}::#{versioned_class_name}",
-                                                :foreign_key => versioned_foreign_key,
-                                                :dependent   => :delete_all
+                                                :foreign_key => versioned_foreign_key
                                               }.merge(options[:association_options] || {})
 
           if block_given?
