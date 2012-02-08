@@ -251,51 +251,6 @@ module ActiveRecord #:nodoc:
             def versions_count
               page.version
             end
-
-            def original_record_exists?
-              original_class.exists?(self.send original_class.versioned_foreign_key)
-            end
-
-            def find_newest_version
-              self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
-            end
-
-            def find_version(version)
-              self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}")
-            end
-
-            def self.restore_deleted(id)
-              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
-              version_record.restore
-            end
-
-            def self.restore_deleted_version(id, version)
-              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
-              version_record.restore
-            end
-
-            def restore
-              id = self.send(self.original_class.versioned_foreign_key)
-              if self.original_class.exists?(id)
-                raise RuntimeError.new("Record exists in restore_deleted, id = #{id} class = #{self.class.name}")
-              end
-
-              version_hash = self.attributes
-              version_hash.delete "version"
-              version_hash.delete "id"
-              version_hash.delete self.original_class.versioned_foreign_key.to_s
-
-              restored_record = self.original_class.new(version_hash)
-              restored_record.id = id
-              restored_record.save!
-
-              new_version = self.dup
-              new_version.version += 1
-              if new_version.respond_to? :created_at
-                new_version.created_at = Time.now
-              end
-              new_version.save!
-            end
           end
 
           versioned_class.cattr_accessor :original_class
@@ -449,6 +404,51 @@ module ActiveRecord #:nodoc:
           else # TODO: is_a?(Fixnum)
             versions.find(options)
           end
+        end
+
+        def original_record_exists?
+          original_class.exists?(self.send original_class.versioned_foreign_key)
+        end
+
+        def find_newest_version
+          self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
+        end
+
+        def find_version(version)
+          self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}")
+        end
+
+        def self.restore_deleted(id)
+          version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
+          version_record.restore
+        end
+
+        def self.restore_deleted_version(id, version)
+          version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
+          version_record.restore
+        end
+
+        def restore
+          id = self.send(self.original_class.versioned_foreign_key)
+          if self.original_class.exists?(id)
+            raise RuntimeError.new("Record exists in restore_deleted, id = #{id} class = #{self.class.name}")
+          end
+
+          version_hash = self.attributes
+          version_hash.delete "version"
+          version_hash.delete "id"
+          version_hash.delete self.original_class.versioned_foreign_key.to_s
+
+          restored_record = self.original_class.new(version_hash)
+          restored_record.id = id
+          restored_record.save!
+
+          new_version = self.dup
+          new_version.version += 1
+          if new_version.respond_to? :created_at
+            new_version.created_at = Time.now
+          end
+          new_version.save!
         end
 
         protected
