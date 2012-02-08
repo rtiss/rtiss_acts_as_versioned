@@ -261,6 +261,7 @@ module ActiveRecord #:nodoc:
               version_hash = self.attributes
               version_hash.delete "version"
               version_hash.delete "id"
+              version_hash.delete "deleted_in_original_table"
               version_hash.delete self.original_class.versioned_foreign_key.to_s
 
               restored_record = self.original_class.new(version_hash)
@@ -273,11 +274,6 @@ module ActiveRecord #:nodoc:
                 new_version.created_at = Time.now
               end
               new_version.save!
-            end
-
-            def self.restore_deleted(id)
-              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
-              version_record.restore
             end
 
             def self.restore_deleted_version(id, version)
@@ -512,6 +508,11 @@ module ActiveRecord #:nodoc:
           # Rake migration task to drop the versioned table
           def drop_versioned_table
             self.connection.drop_table versioned_table_name
+          end
+
+          def restore_deleted(id)
+            version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
+            version_record.restore
           end
 
           # Executes the block with the versioning callbacks disabled.
