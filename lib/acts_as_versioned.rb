@@ -256,21 +256,6 @@ module ActiveRecord #:nodoc:
               original_class.exists?(self.send original_class.versioned_foreign_key)
             end
 
-            def find_versions(*args)
-              options = args.extract_options!
-              version_condition = "#{self.class.versioned_foreign_key} = #{self.id}"
-              if options[:conditions] then
-                options[:conditions] += " and #{version_condition}"
-              else
-                options[:conditions] = version_condition
-              end
-              if args.first.is_a?(Symbol)
-                versions.find(args.first, options)
-              else # TODO: is_a?(Fixnum)
-                versions.find(options)
-              end
-            end
-
             def find_newest_version
               self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
             end
@@ -450,6 +435,21 @@ module ActiveRecord #:nodoc:
         end
 
         def empty_callback() end #:nodoc:
+
+        def find_versions(*args)
+          options = args.extract_options!
+          version_condition = "#{self.class.versioned_foreign_key} = #{self.id}"
+          if options[:conditions] then
+            options[:conditions] += " and #{version_condition}"
+          else
+            options[:conditions] = version_condition
+          end
+          if args.first.is_a?(Symbol)
+            versions.find(args.first, options)
+          else # TODO: is_a?(Fixnum)
+            versions.find(options)
+          end
+        end
 
         protected
           # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
