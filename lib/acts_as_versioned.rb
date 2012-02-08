@@ -312,7 +312,7 @@ module ActiveRecord #:nodoc:
         def set_deleted_flag
           rev = self.class.versioned_class.new
           clone_versioned_model(self, rev)
-          rev.send("#{self.class.version_column}=", send(self.class.version_column))
+          rev.send("#{self.class.version_column}=", send(self.class.version_column)+1)
           rev.send("#{self.class.versioned_foreign_key}=", id)
           rev.send("#{self.class.deleted_in_original_table_flag}=", true)
           rev.save
