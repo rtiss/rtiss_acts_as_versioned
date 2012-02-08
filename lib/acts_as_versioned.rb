@@ -248,7 +248,7 @@ module ActiveRecord #:nodoc:
             end
 
             def versions_count
-              page.version
+              page.version # TODO: ?!
             end
 
             def restore
@@ -312,7 +312,10 @@ module ActiveRecord #:nodoc:
         def set_deleted_flag
           rev = self.class.versioned_class.new
           clone_versioned_model(self, rev)
-          rev.send("#{self.class.version_column}=", send(self.class.version_column)+1)
+STDERR.puts "self.class isa #{self.class.name}"
+STDERR.puts "send(self.class.version_column): #{send(self.class.version_column)}
+"
+          rev.send("#{self.class.version_column}=", highest_version+1)
           rev.send("#{self.class.versioned_foreign_key}=", id)
           rev.send("#{self.class.deleted_in_original_table_flag}=", true)
           rev.save
@@ -438,8 +441,17 @@ module ActiveRecord #:nodoc:
           self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
         end
 
+        def highest_version
+          v = find_newest_version
+          if v then 
+            v.version 
+          else 
+            -1
+          end
+        end
+
         def find_version(version)
-          self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}")
+          self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}") # TODO: version column
         end
 
         def self.restore_deleted_version(id, version)
