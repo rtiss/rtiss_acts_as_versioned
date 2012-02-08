@@ -254,7 +254,7 @@ module ActiveRecord #:nodoc:
             def restore
               id = self.send(self.original_class.versioned_foreign_key)
               if self.original_class.exists?(id)
-                raise RuntimeError.new("Record exists in restore_deleted, id = #{id} class = #{self.class.name}")
+                raise RuntimeError.new("Record exists in restore, id = #{id} class = #{self.class.name}")
               end
 
               version_hash = self.attributes
@@ -278,11 +278,6 @@ module ActiveRecord #:nodoc:
 
             def original_record_exists?
               original_class.exists?(self.send original_class.versioned_foreign_key)
-            end
-
-            def self.restore_deleted_version(id, version)
-              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
-              version_record.restore
             end
           end
 
@@ -521,6 +516,11 @@ module ActiveRecord #:nodoc:
 
           def restore_deleted(id)
             version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
+            version_record.restore
+          end
+
+          def restore_deleted_version(id, version)
+            version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
             version_record.restore
           end
 
