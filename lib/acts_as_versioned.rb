@@ -274,6 +274,16 @@ module ActiveRecord #:nodoc:
               end
               new_version.save!
             end
+
+            def self.restore_deleted(id)
+              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
+              version_record.restore
+            end
+
+            def self.restore_deleted_version(id, version)
+              version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
+              version_record.restore
+            end
           end
 
           versioned_class.cattr_accessor :original_class
@@ -439,16 +449,6 @@ module ActiveRecord #:nodoc:
 
         def find_version(version)
           self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}")
-        end
-
-        def self.restore_deleted(id)
-          version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
-          version_record.restore
-        end
-
-        def self.restore_deleted_version(id, version)
-          version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
-          version_record.restore
         end
 
         protected
