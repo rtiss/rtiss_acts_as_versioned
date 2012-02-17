@@ -448,7 +448,9 @@ module ActiveRecord #:nodoc:
         end
 
         def find_version(version)
-          self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}") # TODO: version column
+          ret = self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}") # TODO: version column
+          raise "find_version: version #{version} not found in database" unless ret
+          ret
         end
 
         protected
