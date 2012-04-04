@@ -310,6 +310,8 @@ module ActiveRecord #:nodoc:
         end
 
         def set_deleted_flag
+          return if self.id = nil
+
           rev = self.class.versioned_class.new
           clone_versioned_model(self, rev)
           rev.send("#{self.class.version_column}=", highest_version+1)
@@ -420,6 +422,8 @@ module ActiveRecord #:nodoc:
         def empty_callback() end #:nodoc:
 
         def find_versions(*args)
+          return [] if self.id.nil?
+
           options = args.extract_options!
           version_condition = "#{self.class.versioned_foreign_key} = #{self.id}"
           if options[:conditions] then
@@ -435,6 +439,8 @@ module ActiveRecord #:nodoc:
         end
 
         def find_newest_version
+          return nil if self.id.nil?
+
           self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
         end
 
@@ -448,6 +454,8 @@ module ActiveRecord #:nodoc:
         end
 
         def find_version(version)
+          return nil if self.id.nil?
+
           ret = self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}") # TODO: version column
           raise "find_version: version #{version} not found in database" unless ret
           ret
