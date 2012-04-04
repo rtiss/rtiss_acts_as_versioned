@@ -310,7 +310,7 @@ module ActiveRecord #:nodoc:
         end
 
         def set_deleted_flag
-          return if self.id = nil
+          return if self.id.nil?
 
           rev = self.class.versioned_class.new
           clone_versioned_model(self, rev)
