@@ -20,6 +20,8 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+VERSION = '0.6.0-tiss'
+
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
     # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a 
