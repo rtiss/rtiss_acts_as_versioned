@@ -270,7 +270,7 @@ module ActiveRecord #:nodoc:
               if restored_record.respond_to? :updated_at=
                 restored_record.updated_at = Time.now
               end
-              restored_record.save!
+              restored_record.save_without_revision!
 
               new_version = clone
               new_version.version += 1
