@@ -267,13 +267,16 @@ module ActiveRecord #:nodoc:
 
               restored_record = self.original_class.new(version_hash)
               restored_record.id = id
+              if restored_record.respond_to? :updated_at=
+                restored_record.updated_at = Time.now
+              end
               restored_record.save!
 
               new_version = clone
               new_version.version += 1
               new_version.deleted_in_original_table = false
-              if new_version.respond_to? :created_at
-                new_version.created_at = Time.now
+              if new_version.respond_to? :updated_at=
+                new_version.updated_at = Time.now
               end
               new_version.save!
             end
@@ -307,6 +310,9 @@ module ActiveRecord #:nodoc:
             clone_versioned_model(self, rev)
             rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
+            if rev.respond_to? :updated_at=
+              rev.updated_at = Time.now
+            end
             rev.save
           end
         end
@@ -319,6 +325,9 @@ module ActiveRecord #:nodoc:
           rev.send("#{self.class.version_column}=", highest_version+1)
           rev.send("#{self.class.versioned_foreign_key}=", id)
           rev.send("#{self.class.deleted_in_original_table_flag}=", true)
+          if rev.respond_to? :updated_at=
+            rev.updated_at = Time.now
+          end
           rev.save
         end
 
@@ -580,6 +589,7 @@ module ActiveRecord #:nodoc:
 end
 
 # TISS extension: do not pull this.
+# TODO: Move to TISS app (initializer)
 module ActiveRecord #:nodoc:
   module ConnectionAdapters #:nodoc:
     class TableDefinition
