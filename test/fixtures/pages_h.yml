@@ -6,6 +6,7 @@ welcome_2:
   version: 24
   author_id: 1
   revisor_id: 1
+  deleted_in_original_table: false
 welcome_1:
   id: 2
   page_id: 1

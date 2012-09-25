@@ -310,6 +310,7 @@ module ActiveRecord #:nodoc:
             clone_versioned_model(self, rev)
             rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
+            rev.send("#{self.class.deleted_in_original_table_flag}=", false)
             if rev.respond_to? :updated_at=
               rev.updated_at = Time.now
             end

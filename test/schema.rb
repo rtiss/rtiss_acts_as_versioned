@@ -42,6 +42,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :body, :text
     t.column :version_type, :string, :limit => 255
     t.column :updated_at, :datetime
+    t.column :deleted_in_original_table, :boolean
   end
   
   add_index :locked_pages_revisions, [:page_id, :lock_version], :unique => true
