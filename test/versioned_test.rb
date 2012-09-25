@@ -370,9 +370,15 @@ class VersionedTest < ActiveSupport::TestCase
 
   def test_deleted_in_original_table
     record = Page::Version.find 2
-    assert !record.deleted_in_original_table
-    record.page.destroy
+    assert_equal false, record.deleted_in_original_table
+    record.page.title = "Title changed"
+    assert record.page.save
+
     record = Page::Version.find 3
-    assert record.deleted_in_original_table
+    assert_equal false, record.deleted_in_original_table
+
+    record.page.destroy
+    record = Page::Version.find 4
+    assert_equal true, record.deleted_in_original_table
   end
 end 
