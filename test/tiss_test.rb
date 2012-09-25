@@ -180,6 +180,15 @@ class TissTest < ActiveSupport::TestCase
     assert_nothing_raised do o.destroy end
     assert_equal o.highest_version, -1
   end
+
+  def test_versions_after_save
+    r = Rolle.new(:name => 'karin')
+    assert r.save
+    r.name = 'zak'
+    assert r.save
+    assert_equal 2, r.versions.size 
+    assert_equal 2, r.versions.count
+  end
     
 private
   def create_object(bezeichnung)
