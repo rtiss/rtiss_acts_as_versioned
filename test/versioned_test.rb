@@ -3,8 +3,8 @@ require File.join(File.dirname(__FILE__), 'fixtures/page')
 require File.join(File.dirname(__FILE__), 'fixtures/widget')
 
 class VersionedTest < ActiveSupport::TestCase
-  fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions, :authors, :landmarks, :landmark_versions
-  set_fixture_class :page_versions => Page::Version
+  fixtures :pages, :pages_h, :locked_pages, :locked_pages_revisions, :authors, :landmarks, :landmark_h
+  set_fixture_class :pages_h => Page::Version
 
   def test_saves_versioned_copy
     p = Page.create! :title => 'first title', :body => 'first body'
@@ -242,7 +242,7 @@ class VersionedTest < ActiveSupport::TestCase
   end
 
   def test_find_version
-    assert_equal page_versions(:welcome_1), pages(:welcome).versions.find_by_version(23)
+    assert_equal pages_h(:welcome_1), pages(:welcome).versions.find_by_version(23)
   end
 
   def test_with_sequence
@@ -302,21 +302,21 @@ class VersionedTest < ActiveSupport::TestCase
   end
 
   def test_should_find_earliest_version
-    assert_equal page_versions(:welcome_1), pages(:welcome).versions.earliest
+    assert_equal pages_h(:welcome_1), pages(:welcome).versions.earliest
   end
 
   def test_should_find_latest_version
-    assert_equal page_versions(:welcome_2), pages(:welcome).versions.latest
+    assert_equal pages_h(:welcome_2), pages(:welcome).versions.latest
   end
 
   def test_should_find_previous_version
-    assert_equal page_versions(:welcome_1), page_versions(:welcome_2).previous
-    assert_equal page_versions(:welcome_1), pages(:welcome).versions.before(page_versions(:welcome_2))
+    assert_equal pages_h(:welcome_1), pages_h(:welcome_2).previous
+    assert_equal pages_h(:welcome_1), pages(:welcome).versions.before(pages_h(:welcome_2))
   end
 
   def test_should_find_next_version
-    assert_equal page_versions(:welcome_2), page_versions(:welcome_1).next
-    assert_equal page_versions(:welcome_2), pages(:welcome).versions.after(page_versions(:welcome_1))
+    assert_equal pages_h(:welcome_2), pages_h(:welcome_1).next
+    assert_equal pages_h(:welcome_2), pages(:welcome).versions.after(pages_h(:welcome_1))
   end
 
   def test_should_find_version_count

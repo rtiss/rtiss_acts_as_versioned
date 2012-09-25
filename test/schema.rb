@@ -9,7 +9,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :revisor_id, :integer
   end
 
-  create_table :page_versions, :force => true do |t|
+  create_table :pages_h, :force => true do |t|
     t.column :page_id, :integer
     t.column :version, :integer
     t.column :title, :string, :limit => 255
@@ -18,9 +18,10 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :updated_on, :datetime
     t.column :author_id, :integer
     t.column :revisor_id, :integer
+    t.column :deleted_in_original_table, :boolean
   end
   
-  add_index :page_versions, [:page_id, :version], :unique => true
+  add_index :pages_h, [:page_id, :version], :unique => true
   
   create_table :authors, :force => true do |t|
     t.column :page_id, :integer
@@ -52,14 +53,15 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :updated_at, :datetime
   end
 
-  create_table :widget_versions, :force => true do |t|
+  create_table :widgets_h, :force => true do |t|
     t.column :widget_id, :integer
     t.column :name, :string, :limit => 50
     t.column :version, :integer
     t.column :updated_at, :datetime
+    t.column :deleted_in_original_table, :boolean
   end
   
-  add_index :widget_versions, [:widget_id, :version], :unique => true
+  add_index :widget_h, [:widget_id, :version], :unique => true
   
   create_table :landmarks, :force => true do |t|
     t.column :name, :string
@@ -69,14 +71,15 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :version, :integer
   end
 
-  create_table :landmark_versions, :force => true do |t|
+  create_table :landmark_h, :force => true do |t|
     t.column :landmark_id, :integer
     t.column :name, :string
     t.column :latitude, :float
     t.column :longitude, :float
     t.column :doesnt_trigger_version,:string
     t.column :version, :integer
+    t.column :deleted_in_original_table, :boolean
   end
   
-  add_index :landmark_versions, [:landmark_id, :version], :unique => true
+  add_index :landmark_h, [:landmark_id, :version], :unique => true
 end
