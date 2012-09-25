@@ -263,13 +263,13 @@ class VersionedTest < ActiveSupport::TestCase
   def test_referential_integrity
     pages(:welcome).destroy
     assert_equal 0, Page.count
-    assert_equal 0, Page::Version.count
+    assert_equal 3, Page::Version.count
   end
 
   def test_association_options
     association = Page.reflect_on_association(:versions)
     options = association.options
-    assert_equal :delete_all, options[:dependent]
+    assert_equal nil, options[:dependent]
 
     association = Widget.reflect_on_association(:versions)
     options = association.options
@@ -282,7 +282,7 @@ class VersionedTest < ActiveSupport::TestCase
     assert_equal 1, Widget.versioned_class.count
     widget.destroy
     assert_equal 0, Widget.count
-    assert_equal 1, Widget.versioned_class.count
+    assert_equal 2, Widget.versioned_class.count
   end
 
   def test_versioned_records_should_belong_to_parent
@@ -371,7 +371,7 @@ class VersionedTest < ActiveSupport::TestCase
   def test_deleted_in_original_table
     record = Page::Version.find 1 
     assert !record.deleted_in_original_table
-    record.page.delete
+    record.page.destroy
     assert record.deleted_in_original_table
   end
 end 
