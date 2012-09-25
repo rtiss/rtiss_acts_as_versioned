@@ -175,25 +175,13 @@ class TissTest < ActiveSupport::TestCase
     assert x.name == "lebt"
   end
     
-  def test_find_and_deleted_in_original_table
-    mitarbeiter = Personal::Mitarbeiter.create(:person_id=>6, :eintrittsdatum=>'1990-01-01')
-    rel_person_orgeinheit = Organisation::RelPersonOrgeinheit.create(:anstellbar_id=>mitarbeiter.id, :anstellbar_type=>'Personal::Mitarbeiter', :orgeinheit_id=>1, :person_id=>5, :lup_person_funktion_id=>1, :org_interne_id=>1)
-
-    assert rel_person_orgeinheit.save
-
-    rel_person_orgeinheit.destroy
-    assert rel_person_orgeinheit.alte_adressbuchdaten_wiederherstellen
-
-#    assert_raises NoMethodError do rel_person_orgeinheit.alte_adressbuchdaten_wiederherstellen end
-  end
-
   def test_destroy_unsaved_record
     o = Rolle.new(:name => "Nicht Speichern")
     assert_nothing_raised do o.destroy end
     assert_equal o.highest_version, -1
   end
     
-  private
+private
   def create_object(bezeichnung)
     o = Rolle.new(:name => bezeichnung)
     o.save
