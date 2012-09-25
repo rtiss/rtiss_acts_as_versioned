@@ -253,7 +253,7 @@ module ActiveRecord #:nodoc:
               page.version # TODO: ?!
             end
 
-            def restore
+            def restore(perform_validation = true)
               id = self.send(self.original_class.versioned_foreign_key)
               if self.original_class.exists?(id)
                 raise RuntimeError.new("Record exists in restore, id = #{id} class = #{self.class.name}")
@@ -270,7 +270,9 @@ module ActiveRecord #:nodoc:
               if restored_record.respond_to? :updated_at=
                 restored_record.updated_at = Time.now
               end
-              restored_record.save_without_revision!
+              unless restored_record.save_without_revision(perform_validation)
+                raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
+              end
 
               new_version = clone
               new_version.version += 1
@@ -361,11 +363,14 @@ module ActiveRecord #:nodoc:
         end
 
         # Temporarily turns off Optimistic Locking while saving.  Used when reverting so that a new version is not created.
-        def save_without_revision
-          save_without_revision!
-          true
-        rescue
-          false
+        def save_without_revision(perform_validation = true)
+          ret = false
+          without_locking do
+            without_revision do
+              ret = save(perform_validation)
+            end
+          end
+          return ret
         end
 
         def save_without_revision!

@@ -189,7 +189,20 @@ class TissTest < ActiveSupport::TestCase
     assert_equal 2, r.versions.size 
     assert_equal 2, r.versions.count
   end
+
+  def test_restore_without_validations
+    r = Rolle.new(:name => 'karin')
+    assert r.save
+    version = r.find_newest_version
+    r.destroy
     
+    r = Rolle.new(:name => 'karin')
+    assert r.save
+    
+    assert_raises RuntimeError do version.restore end
+    assert_nothing_raised do version.restore(perform_validations = false) end
+  end
+
 private
   def create_object(bezeichnung)
     o = Rolle.new(:name => bezeichnung)
