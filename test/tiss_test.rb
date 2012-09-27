@@ -221,6 +221,15 @@ class TissTest < ActiveSupport::TestCase
     assert_equal 2, r.find_newest_version.version
   end
 
+  def test_locked_rolle2
+    r = LockedRolle.new(:name => 'karin')
+    r.save
+    assert_equal 1, r.find_newest_version.lock_version
+    r.name = 'zak'
+    r.save
+    assert_equal 2, r.find_newest_version.lock_version
+  end
+
 private
   def create_object(bezeichnung)
     o = Rolle.new(:name => bezeichnung)

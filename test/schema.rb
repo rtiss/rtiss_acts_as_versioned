@@ -145,4 +145,36 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string   "vergaberichtlinien",        :limit => 4000
     t.boolean  "ist_delegierbar",                           :precision => 1,  :scale => 0, :default => true
   end
+
+  create_table "locked_rolle2", :force => true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "version",                             :precision => 38, :scale => 0, :default => 1
+    t.integer  "lock_version",                             :precision => 38, :scale => 0, :default => 0
+    t.integer  "mutator_id",                          :precision => 38, :scale => 0, :default => 0
+    t.string   "name",                :limit => 50,                                                    :null => false
+    t.string   "beschreibung",        :limit => 250
+    t.integer  "parent_id",                           :precision => 38, :scale => 0
+    t.string   "beschreibung_intern", :limit => 4000
+    t.string   "geltungsbereich",     :limit => 1000
+    t.string   "vergaberichtlinien",  :limit => 4000
+    t.boolean  "ist_delegierbar",                     :precision => 1,  :scale => 0, :default => true
+  end
+
+  create_table "locked_rolle2_h", :force => true do |t|
+    t.integer  "locked_rolle2_id",                                  :precision => 38, :scale => 0
+    t.integer  "version",                                   :precision => 38, :scale => 0
+    t.integer  "lock_version",                                   :precision => 38, :scale => 0, :default => 0
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "mutator_id",                                :precision => 38, :scale => 0
+    t.string   "name",                      :limit => 50
+    t.string   "beschreibung",              :limit => 250
+    t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
+    t.integer  "parent_id",                                 :precision => 38, :scale => 0
+    t.string   "beschreibung_intern",       :limit => 4000
+    t.string   "geltungsbereich",           :limit => 1000
+    t.string   "vergaberichtlinien",        :limit => 4000
+    t.boolean  "ist_delegierbar",                           :precision => 1,  :scale => 0, :default => true
+  end
 end
