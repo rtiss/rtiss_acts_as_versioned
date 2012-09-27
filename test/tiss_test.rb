@@ -222,12 +222,13 @@ class TissTest < ActiveSupport::TestCase
   end
 
   def test_locked_rolle2
+# not needed any more
     r = LockedRolle.new(:name => 'karin')
     r.save
-    assert_equal 1, r.find_newest_version.lock_version
+    assert_equal 0, r.find_newest_version.lock_version
     r.name = 'zak'
     r.save
-    assert_equal 2, r.find_newest_version.lock_version
+    assert_equal 0, r.find_newest_version.lock_version
   end
 
 private

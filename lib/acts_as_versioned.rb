@@ -310,6 +310,9 @@ module ActiveRecord #:nodoc:
             @saving_version = nil
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
+            if locking_enabled?
+              self.send("#{self.class.version_column}=", next_version)
+            end
             rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.send("#{self.class.deleted_in_original_table_flag}=", false)
@@ -483,7 +486,7 @@ module ActiveRecord #:nodoc:
           # field even when using optimistic locking (?? rethink)
           def set_new_version
             @saving_version = new_record? || save_version?
-            self.send("#{self.class.version_column}=", next_version) if @saving_version
+            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
           end
 
           # Gets the next available version for the current record, or 1 for a new record
