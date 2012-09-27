@@ -203,6 +203,14 @@ class TissTest < ActiveSupport::TestCase
     assert_nothing_raised do version.restore(perform_validations = false) end
   end
 
+  def test_save_without_revision
+    r = Rolle.new(:name => 'karin')
+    assert_equal true, r.save_without_revision
+    
+    r = Rolle.new(:name => 'karin')
+    assert_equal false, r.save_without_revision
+  end
+
 private
   def create_object(bezeichnung)
     o = Rolle.new(:name => bezeichnung)
