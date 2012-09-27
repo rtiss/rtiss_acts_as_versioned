@@ -311,8 +311,9 @@ module ActiveRecord #:nodoc:
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
             if locking_enabled?
-#              self.send("#{self.class.version_column}=", next_version)
-              rev.send("#{self.class.version_column}=", next_version)
+              self.send("#{self.class.version_column}=", next_version)
+              save_without_revision
+#              rev.send("#{self.class.version_column}=", next_version)
               # save!  loops!
             else
               rev.send("#{self.class.version_column}=", send(self.class.version_column))

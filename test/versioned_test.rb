@@ -227,14 +227,14 @@ class VersionedTest < ActiveSupport::TestCase
     p.title = 'updated title'
     assert p.save_version?
     p.save
-#    assert_equal 3, p.lock_version # is 2 
-#    assert_equal 1, p.versions(true).size # version 1 deleted
+    assert_equal 3, p.lock_version # is 2 
+    assert_equal 1, p.versions(true).size # version 1 deleted
 
     p.title = 'updated title!'
     assert p.save_version?
     p.save
     assert_equal 4, p.lock_version
-    assert_equal 2, p.versions(true).size # version 1 deleted
+    assert_equal 1, p.versions(true).size # version 1 deleted
   end
 
   def test_find_versions

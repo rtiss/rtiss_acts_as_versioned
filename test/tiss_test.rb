@@ -219,6 +219,9 @@ class TissTest < ActiveSupport::TestCase
     r.name = 'zak'
     r.save
     assert_equal 2, r.find_newest_version.version
+    assert_equal 2, r.version
+    r2 = LockedRolle.find r.id
+    assert_equal 2, r2.version
   end
 
   def test_locked_rolle2
