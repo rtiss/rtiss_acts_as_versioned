@@ -311,9 +311,12 @@ module ActiveRecord #:nodoc:
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
             if locking_enabled?
-              self.send("#{self.class.version_column}=", next_version)
+#              self.send("#{self.class.version_column}=", next_version)
+              rev.send("#{self.class.version_column}=", next_version)
+              # save!  loops!
+            else
+              rev.send("#{self.class.version_column}=", send(self.class.version_column))
             end
-            rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.send("#{self.class.deleted_in_original_table_flag}=", false)
             if rev.respond_to? :updated_at=
