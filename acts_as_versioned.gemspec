@@ -15,14 +15,20 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'acts_as_versioned'
-  s.version           = '0.6.0'
+  s.version           = '0.6.0.tiss1'
   s.date              = '2012-02-07'
   s.rubyforge_project = 'acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
   ## as you like.
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
-  s.description = "Add simple versioning to ActiveRecord models (TISS version)."
+  s.description = "Add simple versioning to ActiveRecord models (TISS version).
+
+Each model has a to-many model named mymodel_h which records all changes 
+(including destroys but not deletes) made to the model. This is the version
+used by http://tiss.tuwien.ac.at and substantially differs from the original
+version. If you want to use acts_as_versioned in your project we recommend
+to use technoweenie's version (can be found also on github)"
 
   ## List the primary authors. If there are a bunch of authors, it's probably
   ## better to set the email to an email list or something. If you don't have
@@ -66,14 +72,16 @@ Gem::Specification.new do |s|
     test/database.yml
     test/fixtures/authors.yml
     test/fixtures/landmark.rb
-    test/fixtures/landmark_versions.yml
+    test/fixtures/landmark_h.yml
     test/fixtures/landmarks.yml
     test/fixtures/locked_pages.yml
     test/fixtures/locked_pages_revisions.yml
+    test/fixtures/locked_rolle.rb
     test/fixtures/migrations/1_add_versioned_tables.rb
     test/fixtures/page.rb
-    test/fixtures/page_versions.yml
+    test/fixtures/pages_h.yml
     test/fixtures/pages.yml
+    test/fixtures/rolle.rb
     test/fixtures/widget.rb
     test/migration_test.rb
     test/schema.rb
