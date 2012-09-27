@@ -1,6 +1,7 @@
 # -*- encoding : utf-8 -*-
 
 require File.join(File.dirname(__FILE__), 'fixtures/rolle')
+require File.join(File.dirname(__FILE__), 'fixtures/locked_rolle')
 
 class TissTest < ActiveSupport::TestCase
   def test_versioning
@@ -209,6 +210,15 @@ class TissTest < ActiveSupport::TestCase
     
     r = Rolle.new(:name => 'karin')
     assert_equal false, r.save_without_revision
+  end
+
+  def test_locked_rolle
+    r = LockedRolle.new(:name => 'karin')
+    r.save
+    assert_equal 1, r.find_newest_version.version
+    r.name = 'zak'
+    r.save
+    assert_equal 2, r.find_newest_version.version
   end
 
 private
