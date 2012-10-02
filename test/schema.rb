@@ -18,7 +18,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :updated_on, :datetime
     t.column :author_id, :integer
     t.column :revisor_id, :integer
-    t.column :deleted_in_original_table, :boolean
+    t.column :deleted_in_original_table, :integer
   end
   
   add_index :pages_h, [:page_id, :version], :unique => true
@@ -42,7 +42,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :body, :text
     t.column :version_type, :string, :limit => 255
     t.column :updated_at, :datetime
-    t.column :deleted_in_original_table, :boolean
+    t.column :deleted_in_original_table, :integer
   end
   
   add_index :locked_pages_revisions, [:page_id, :lock_version], :unique => true
@@ -59,7 +59,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :name, :string, :limit => 50
     t.column :version, :integer
     t.column :updated_at, :datetime
-    t.column :deleted_in_original_table, :boolean
+    t.column :deleted_in_original_table, :integer
   end
   
   add_index :widget_h, [:widget_id, :version], :unique => true
@@ -79,7 +79,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :longitude, :float
     t.column :doesnt_trigger_version,:string
     t.column :version, :integer
-    t.column :deleted_in_original_table, :boolean
+    t.column :deleted_in_original_table, :integer
   end
   
   add_index :landmark_h, [:landmark_id, :version], :unique => true
@@ -106,7 +106,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.integer  "mutator_id",                                :precision => 38, :scale => 0
     t.string   "name",                      :limit => 50
     t.string   "beschreibung",              :limit => 250
-    t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
+    t.integer  "deleted_in_original_table",                 :precision => 1,  :scale => 0
     t.integer  "parent_id",                                 :precision => 38, :scale => 0
     t.string   "beschreibung_intern",       :limit => 4000
     t.string   "geltungsbereich",           :limit => 1000
@@ -138,7 +138,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.integer  "mutator_id",                                :precision => 38, :scale => 0
     t.string   "name",                      :limit => 50
     t.string   "beschreibung",              :limit => 250
-    t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
+    t.integer  "deleted_in_original_table",                 :precision => 1,  :scale => 0
     t.integer  "parent_id",                                 :precision => 38, :scale => 0
     t.string   "beschreibung_intern",       :limit => 4000
     t.string   "geltungsbereich",           :limit => 1000

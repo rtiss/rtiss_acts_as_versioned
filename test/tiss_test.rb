@@ -119,7 +119,7 @@ class TissTest < ActiveSupport::TestCase
     assert v.version == o.version, "Version field not restored correctly"
 
     v = o.find_newest_version
-    assert !v.deleted_in_original_table
+    assert v.deleted_in_original_table == 2, "Deleted_in_original_table zeigt nicht den restore an"
   end
 
   def test_original_record_exists
