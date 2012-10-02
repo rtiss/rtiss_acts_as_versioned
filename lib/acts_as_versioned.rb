@@ -489,9 +489,8 @@ module ActiveRecord #:nodoc:
           # field even when using optimistic locking (?? rethink)
           def set_new_version
             @saving_version = new_record? || save_version?
-            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
-# puts "Version column is #{self.class.version_column}"
-            # self.send("#{self.class.version_column}=", next_version) if @saving_version
+#            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
+            self.send("#{self.class.version_column}=", next_version) if @saving_version
           end
 
           # Gets the next available version for the current record, or 1 for a new record

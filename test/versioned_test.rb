@@ -76,7 +76,7 @@ class VersionedTest < ActiveSupport::TestCase
     assert_equal 'Welcome to the weblog', p.title
     assert_equal 'LockedPage', p.versions.first.version_type
 
-    assert p.revert_to!(p.versions.first.lock_version), "Couldn't revert to 23"
+    assert p.revert_to!(p.versions.first.version), "Couldn't revert to 23"
     assert_equal 'Welcome to the weblg', p.title
     assert_equal 'LockedPage', p.versions.first.version_type
   end
@@ -103,7 +103,7 @@ class VersionedTest < ActiveSupport::TestCase
     p = locked_pages(:thinking)
     assert_equal 'So I was thinking', p.title
 
-    assert p.revert_to!(p.versions.first.lock_version), "Couldn't revert to 1"
+    assert p.revert_to!(p.versions.first.version), "Couldn't revert to 1"
     assert_equal 'So I was thinking!!!', p.title
     assert_equal 'SpecialLockedPage', p.versions.first.version_type
   end
@@ -197,7 +197,7 @@ class VersionedTest < ActiveSupport::TestCase
       p.title = "NICHT#{i}"
       p.save
       assert_equal "NICHT#{i}", p.title
-      assert_equal (i+4), p.lock_version
+      assert_equal (i+4), p.version
       assert p.versions(true).size <= 2, "locked version can only store 2 versions"
     end
   end
@@ -210,26 +210,26 @@ class VersionedTest < ActiveSupport::TestCase
 
   def test_track_altered_attributes
     p = LockedPage.create! :title => "title"
-    assert_equal 1, p.lock_version
+    assert_equal 1, p.version
     assert_equal 1, p.versions(true).size
 
     p.body = 'whoa'
     assert !p.save_version?
     p.save
-    assert_equal 2, p.lock_version # still increments version because of optimistic locking
+    assert_equal 1, p.version
     assert_equal 1, p.versions(true).size
 
     p.title = 'updated title'
     assert p.save_version?
     p.save
-    assert_equal 3, p.lock_version
-    assert_equal 1, p.versions(true).size # version 1 deleted
+    assert_equal 2, p.version
+    assert_equal 2, p.versions(true).size # version 1 deleted
 
     p.title = 'updated title!'
     assert p.save_version?
     p.save
-    assert_equal 4, p.lock_version
-    assert_equal 1, p.versions(true).size # version 1 deleted
+    assert_equal 3, p.version
+    assert_equal 2, p.versions(true).size # limit
   end
 
   def test_find_versions
