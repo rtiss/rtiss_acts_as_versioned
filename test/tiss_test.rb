@@ -115,6 +115,9 @@ class TissTest < ActiveSupport::TestCase
     assert v.deleted_in_original_table
 
     v.restore
+    o = Rolle.find oid
+    assert v.version == o.version, "Version field not restored correctly"
+
     v = o.find_newest_version
     assert !v.deleted_in_original_table
   end
@@ -212,6 +215,8 @@ class TissTest < ActiveSupport::TestCase
     assert_equal false, r.save_without_revision
   end
 
+=begin
+# Wait until experimenting-with-optimistic-locking is merged.
   def test_locked_rolle
     r = LockedRolle.new(:name => 'karin')
     r.save
@@ -220,6 +225,7 @@ class TissTest < ActiveSupport::TestCase
     r.save
     assert_equal 2, r.find_newest_version.version
   end
+=end
 
 private
   def create_object(bezeichnung)

@@ -260,7 +260,6 @@ module ActiveRecord #:nodoc:
               end
 
               version_hash = self.attributes
-              version_hash.delete "version"
               version_hash.delete "id"
               version_hash.delete "deleted_in_original_table"
               version_hash.delete self.original_class.versioned_foreign_key.to_s
