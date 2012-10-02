@@ -109,17 +109,19 @@ class TissTest < ActiveSupport::TestCase
     
     assert_raises(RuntimeError) { v.restore }
     assert !v.deleted_in_original_table
+    assert !v.record_restored, "Record_restored doesn't show that the record was not undeleted (should be false)"
 
     o.destroy
     v = o.find_newest_version
     assert v.deleted_in_original_table
 
     v.restore
+    assert v.record_restored, "Record_restored doesn't show that the record was undeleted (should be true)"
     o = Rolle.find oid
     assert v.version == o.version, "Version field not restored correctly"
 
     v = o.find_newest_version
-    assert v.deleted_in_original_table == 2, "Deleted_in_original_table zeigt nicht den restore an"
+    assert !v.deleted_in_original_table, "Deleted_in_original_table doesn't show that the record was undeleted (should be false)"
   end
 
   def test_original_record_exists
