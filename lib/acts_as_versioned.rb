@@ -310,13 +310,7 @@ module ActiveRecord #:nodoc:
             @saving_version = nil
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
-=begin
-            if locking_enabled?
-              rev.send("#{self.class.version_column}=", next_version)
-            else
-=end
-              rev.send("#{self.class.version_column}=", send(self.class.version_column))
-#            end
+            rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.send("#{self.class.deleted_in_original_table_flag}=", false)
             if rev.respond_to? :updated_at=
@@ -486,10 +480,10 @@ module ActiveRecord #:nodoc:
 
         protected
           # sets the new version before saving. We want to update the version
-          # field even when using optimistic locking (?? rethink)
+          # field even when using optimistic locking. Do not use locked_version
+          # as version field.
           def set_new_version
             @saving_version = new_record? || save_version?
-#            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
             self.send("#{self.class.version_column}=", next_version) if @saving_version
           end
 
