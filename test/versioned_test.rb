@@ -64,11 +64,6 @@ class VersionedTest < ActiveSupport::TestCase
     assert_equal 'Welcome to the weblg', p.title
   end
 
-  def test_rollback_fails_with_invalid_revision
-    p = locked_pages(:welcome)
-    assert !p.revert_to!(locked_pages(:thinking))
-  end
-
   def test_saves_versioned_copy_with_options
     p = LockedPage.create! :title => 'first title'
     assert !p.new_record?

@@ -47,7 +47,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :deleted_in_original_table, :boolean
   end
   
-  add_index :locked_pages_revisions, [:page_id, :lock_version], :unique => true
+  add_index :locked_pages_revisions, [:page_id, :version], :unique => true
 
   create_table :widgets, :force => true do |t|
     t.column :name, :string, :limit => 50

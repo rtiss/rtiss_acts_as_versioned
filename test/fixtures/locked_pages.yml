@@ -1,10 +1,12 @@
 welcome:
   id: 1
   title: Welcome to the weblog
+  version: 2
   lock_version: 24
   type: LockedPage
 thinking:
   id: 2
   title: So I was thinking
+  version: 2
   lock_version: 24
   type: SpecialLockedPage

@@ -1,6 +1,7 @@
 welcome_1:
   id: 1
   page_id: 1
+  version: 1
   title: Welcome to the weblg
   lock_version: 23
   version_type: LockedPage
@@ -8,6 +9,7 @@ welcome_1:
 welcome_2:
   id: 2
   page_id: 1
+  version: 2
   title: Welcome to the weblog
   lock_version: 24
   version_type: LockedPage
@@ -15,6 +17,7 @@ welcome_2:
 thinking_1:
   id: 3
   page_id: 2
+  version: 1
   title: So I was thinking!!!
   lock_version: 23
   version_type: SpecialLockedPage
@@ -22,6 +25,7 @@ thinking_1:
 thinking_2:
   id: 4
   page_id: 2
+  version: 2
   title: So I was thinking
   lock_version: 24
   version_type: SpecialLockedPage

@@ -352,13 +352,22 @@ module ActiveRecord #:nodoc:
 
         # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
         def revert_to(version)
+puts "zak1"
           if version.is_a?(self.class.versioned_class)
+puts "zak2"
             return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
+puts "zak3"
           else
+puts "zak4"
+puts "version = #{version.version}"
             return false unless version = versions.send("find_by_#{self.class.version_column}", version)
+puts "zak5"
           end
+puts "zak6"
           self.clone_versioned_model(version, self)
+puts "zak7"
           send("#{self.class.version_column}=", version.send(self.class.version_column))
+puts "zak8"
           true
         end
 
@@ -489,9 +498,9 @@ module ActiveRecord #:nodoc:
           # field even when using optimistic locking (?? rethink)
           def set_new_version
             @saving_version = new_record? || save_version?
-            # self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
-puts "Version column is #{self.class.version_column}"
-            self.send("#{self.class.version_column}=", next_version) if @saving_version
+            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
+# puts "Version column is #{self.class.version_column}"
+            # self.send("#{self.class.version_column}=", next_version) if @saving_version
           end
 
           # Gets the next available version for the current record, or 1 for a new record
