@@ -195,13 +195,13 @@ class VersionedTest < ActiveSupport::TestCase
   end
 
   def test_version_max_limit
-    p = LockedPage.create! :title => "title"
-    p.update_attributes(:title => "title1")
-    p.update_attributes(:title => "title2")
+    p = LockedPage.create! :title => "KARIN"
+    p.update_attributes(:title => "ZAK")
+    p.update_attributes(:title => "LEBT")
     5.times do |i|
-      p.title = "title#{i}"
+      p.title = "NICHT#{i}"
       p.save
-      assert_equal "title#{i}", p.title
+      assert_equal "NICHT#{i}", p.title
       assert_equal (i+4), p.lock_version
       assert p.versions(true).size <= 2, "locked version can only store 2 versions"
     end
