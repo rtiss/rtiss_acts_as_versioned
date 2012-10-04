@@ -173,7 +173,7 @@ module ActiveRecord #:nodoc:
 
           cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
             :version_column, :max_version_limit, :track_altered_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
-            :version_association_options, :version_if_changed, :deleted_in_original_table_flag
+            :version_association_options, :version_if_changed, :deleted_in_original_table_flag, :record_restored_flag
 
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
@@ -182,6 +182,7 @@ module ActiveRecord #:nodoc:
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
           self.version_column               = options[:version_column]     || 'version'
           self.deleted_in_original_table_flag = options[:deleted_in_original_table_flag]     || 'deleted_in_original_table'
+          self.record_restored_flag = options[:record_restored_flag]     || 'record_restored'
           self.version_sequence_name        = options[:sequence_name]
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
@@ -261,7 +262,8 @@ module ActiveRecord #:nodoc:
 
               version_hash = self.attributes
               version_hash.delete "id"
-              version_hash.delete "deleted_in_original_table"
+              version_hash.delete self.original_class.deleted_in_original_table_flag.to_s
+              version_hash.delete self.original_class.record_restored_flag.to_s
               version_hash.delete self.original_class.versioned_foreign_key.to_s
 
               restored_record = self.original_class.new(version_hash)
@@ -273,9 +275,13 @@ module ActiveRecord #:nodoc:
                 raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
               end
 
+              self.send("#{self.original_class.record_restored_flag}=", true)
+              save!
+
               new_version = clone
               new_version.version += 1
-              new_version.deleted_in_original_table = false
+              new_version.send("#{self.original_class.deleted_in_original_table_flag}=", false)
+              new_version.send("#{self.original_class.record_restored_flag}=", false)
               if new_version.respond_to? :updated_at=
                 new_version.updated_at = Time.now
               end
@@ -312,6 +318,7 @@ module ActiveRecord #:nodoc:
             rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.send("#{self.class.deleted_in_original_table_flag}=", false)
+            rev.send("#{self.class.record_restored_flag}=", false)
             if rev.respond_to? :updated_at=
               rev.updated_at = Time.now
             end
@@ -327,6 +334,7 @@ module ActiveRecord #:nodoc:
           rev.send("#{self.class.version_column}=", highest_version+1)
           rev.send("#{self.class.versioned_foreign_key}=", id)
           rev.send("#{self.class.deleted_in_original_table_flag}=", true)
+          rev.send("#{self.class.record_restored_flag}=", false)
           if rev.respond_to? :updated_at=
             rev.updated_at = Time.now
           end
@@ -514,6 +522,7 @@ module ActiveRecord #:nodoc:
               t.column versioned_foreign_key, :integer
               t.column version_column, :integer
               t.column deleted_in_original_table_flag, :boolean, :default => false
+              t.column record_restored_flag, :boolean, :default => false
             end
 
             self.versioned_columns.each do |col| 
