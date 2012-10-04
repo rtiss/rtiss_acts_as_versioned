@@ -275,13 +275,10 @@ module ActiveRecord #:nodoc:
                 raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
               end
 
-              self.send("#{self.original_class.record_restored_flag}=", true)
-              save!
-
               new_version = clone
               new_version.version += 1
               new_version.send("#{self.original_class.deleted_in_original_table_flag}=", false)
-              new_version.send("#{self.original_class.record_restored_flag}=", false)
+              new_version.send("#{self.original_class.record_restored_flag}=", true)
               if new_version.respond_to? :updated_at=
                 new_version.updated_at = Time.now
               end
