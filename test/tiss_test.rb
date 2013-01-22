@@ -109,14 +109,20 @@ class TissTest < ActiveSupport::TestCase
     
     assert_raises(RuntimeError) { v.restore }
     assert !v.deleted_in_original_table
+    assert !v.record_restored, "Record_restored shows that the record was undeleted (should be false) for a newly created record"
 
     o.destroy
     v = o.find_newest_version
     assert v.deleted_in_original_table
 
     v.restore
+    assert !v.record_restored, "Record_restored shows that the record was undeleted (should be false) for the restored version record (but should be in the newly created record)"
+    o = Rolle.find oid
+    assert v.version == o.version, "Version field not restored correctly"
+
     v = o.find_newest_version
-    assert !v.deleted_in_original_table
+    assert !v.deleted_in_original_table, "Deleted_in_original_table doesn't show that the record was undeleted (should be false)"
+    assert v.record_restored, "Record_restored doesn't show that the record was undeleted (should be true) for the version record created upon restore"
   end
 
   def test_original_record_exists
@@ -212,6 +218,8 @@ class TissTest < ActiveSupport::TestCase
     assert_equal false, r.save_without_revision
   end
 
+=begin
+# Wait until experimenting-with-optimistic-locking is merged.
   def test_locked_rolle
     r = LockedRolle.new(:name => 'karin')
     r.save
@@ -234,6 +242,7 @@ class TissTest < ActiveSupport::TestCase
     r.save
     assert_equal 0, r.find_newest_version.lock_version
   end
+=end
 
 private
   def create_object(bezeichnung)
