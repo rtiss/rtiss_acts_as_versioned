@@ -1,2 +1,2 @@
-# -*- encoding : utf-8 -*-
+# encoding: utf-8
 require 'acts_as_versioned'

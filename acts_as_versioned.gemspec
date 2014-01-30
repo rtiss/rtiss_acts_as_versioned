@@ -14,10 +14,10 @@ Gem::Specification.new do |s|
   ## Leave these as is they will be modified for you by the rake gemspec task.
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
-  s.name              = 'acts_as_versioned'
-  s.version           = '0.6.0.tiss1'
-  s.date              = '2012-02-07'
-  s.rubyforge_project = 'acts_as_versioned'
+  s.name              = 'rtiss_acts_as_versioned'
+  s.version           = '0.7.0'
+  s.date              = '2014-01-30'
+  s.rubyforge_project = 'rtiss_acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
   ## as you like.
@@ -33,9 +33,9 @@ to use technoweenie's version (can be found also on github)"
   ## List the primary authors. If there are a bunch of authors, it's probably
   ## better to set the email to an email list or something. If you don't have
   ## a custom homepage, consider using your GitHub URL or the like.
-  s.authors  = ["Rick Olson", "Johannes Thoma"]
-  s.email    = 'johannes.thoma@rise-world.com'
-  s.homepage = 'http://github.com/tiss/acts_as_versioned'
+  s.authors  = ["Rick Olson", "Johannes Thoma", "Igor Jancev"]
+  s.email    = 'igor.jancev@tuwien.ac.at'
+  s.homepage = 'http://github.com/rtiss/rtiss_acts_as_versioned'
 
   ## This gets added to the $LOAD_PATH so that 'lib/NAME.rb' can be required as
   ## require 'NAME.rb' or'/lib/NAME/file.rb' can be as require 'NAME/file.rb'
@@ -48,7 +48,7 @@ to use technoweenie's version (can be found also on github)"
 
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
-  s.add_dependency('activerecord', ["~> 2.3.14"])
+  s.add_dependency('activerecord', [">= 3.0.9"])
 
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
