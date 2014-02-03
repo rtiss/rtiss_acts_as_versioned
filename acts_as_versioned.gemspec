@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# encoding: utf-8
 
 ## This is the rakegem gemspec template. Make sure you read and understand
 ## all of the comments. Some sections require modification, and others can
@@ -14,10 +14,10 @@ Gem::Specification.new do |s|
   ## Leave these as is they will be modified for you by the rake gemspec task.
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
-  s.name              = 'acts_as_versioned'
+  s.name              = 'rtiss_acts_as_versioned'
   s.version           = '0.7.0'
   s.date              = '2014-02-03'
-  s.rubyforge_project = 'acts_as_versioned'
+  s.rubyforge_project = 'rtiss_acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
   ## as you like.
