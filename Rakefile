@@ -88,8 +88,8 @@ end
 #############################################################################
 
 task :release => :build do
-  unless `git branch` =~ /^\* master$/
-    puts "You must be on the master branch to release!"
+  unless `git branch` =~ /^\* master$/ || `git branch` =~ /^\* rails2$/
+    puts "You must be on the master branch or the rails2 branch to release!"
     exit!
   end
   sh "git commit --allow-empty -a -m 'Release #{version}'"
