@@ -371,7 +371,7 @@ module ActiveRecord #:nodoc:
           ret = false
           without_locking do
             without_revision do
-              ret = save(perform_validation)
+              ret = save(:validate => perform_validation)
             end
           end
           return ret
@@ -495,7 +495,7 @@ module ActiveRecord #:nodoc:
 
           # Gets the next available version for the current record, or 1 for a new record
           def next_version
-            (new_record? ? 0 : versions.calculate(:max, version_column).to_i) + 1
+            (new_record? ? 0 : versions.calculate(:maximum, version_column).to_i) + 1
           end
 
         module ClassMethods
