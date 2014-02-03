@@ -13,7 +13,7 @@ def name
 end
 
 def version
-  line = File.read("lib/acts_as_versioned.rb")[/^\s*VERSION\s*=\s*.*/]
+  line = File.read("lib//#{name}.rb")[/^\s*VERSION\s*=\s*.*/]
   line.match(/.*VERSION\s*=\s*['"](.*)['"]/)[1]
 end
 
@@ -70,7 +70,7 @@ end
 
 desc "Open an irb session preloaded with this library"
 task :console do
-  sh "irb -rubygems -r ./lib/acts_as_versioned.rb"
+  sh "irb -rubygems -r ./lib//#{name}.rb"
 end
 
 #############################################################################
@@ -133,9 +133,9 @@ task :gemspec => :validate do
 end
 
 task :validate do
-  libfiles = Dir['lib/*'] - ["lib/acts_as_versioned.rb", "lib/acts_as_versioned"]
+  libfiles = Dir['lib/*'] - ["lib//#{name}.rb", "lib//#{name}"]
   unless libfiles.empty?
-    puts "Directory `lib` should only contain a `acts_as_versioned..rb` file and `acts_as_versioned` dir."
+    puts "Directory `lib` should only contain a `/#{name}.rb` file and `/#{name}` dir."
     exit!
   end
   unless Dir['VERSION*'].empty?
