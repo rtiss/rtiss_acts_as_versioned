@@ -66,7 +66,7 @@ to use technoweenie's version (can be found also on github)"
     RUNNING_UNIT_TESTS
     Rakefile
     init.rb
-    lib/acts_as_versioned.rb
+    lib/rtiss_acts_as_versioned.rb
     rtiss_acts_as_versioned.gemspec
     test/abstract_unit.rb
     test/database.yml
