@@ -292,12 +292,12 @@ module ActiveRecord #:nodoc:
 
           versioned_class.cattr_accessor :original_class
           versioned_class.original_class = self
-          versioned_class.set_table_name versioned_table_name
+          versioned_class.table_name = versioned_table_name
           versioned_class.belongs_to self.to_s.demodulize.underscore.to_sym, 
             :class_name  => "::#{self.to_s}", 
             :foreign_key => versioned_foreign_key
           versioned_class.send :include, options[:extend]         if options[:extend].is_a?(Module)
-          versioned_class.set_sequence_name version_sequence_name if version_sequence_name
+          versioned_class.sequence_name = version_sequence_name if version_sequence_name
         end
       end
 
@@ -395,9 +395,13 @@ module ActiveRecord #:nodoc:
             new_model.send("#{col.name}=", orig_model.send(col.name)) if orig_model.has_attribute?(col.name)
           end
 
-          if orig_model.is_a?(self.class.versioned_class)
+          clone_inheritance_column(orig_model, new_model)
+        end
+
+        def clone_inheritance_column(orig_model, new_model)
+          if orig_model.is_a?(self.class.versioned_class) && new_model.class.column_names.include?(new_model.class.inheritance_column.to_s)
             new_model[new_model.class.inheritance_column] = orig_model[self.class.versioned_inheritance_column]
-          elsif new_model.is_a?(self.class.versioned_class)
+          elsif new_model.is_a?(self.class.versioned_class) && new_model.class.column_names.include?(self.class.versioned_inheritance_column.to_s)
             new_model[self.class.versioned_inheritance_column] = orig_model[orig_model.class.inheritance_column]
           end
         end
