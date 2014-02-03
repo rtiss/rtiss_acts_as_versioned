@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
-  s.version           = '0.7.1'
+  s.version           = '0.7.2'
   s.date              = '2014-02-03'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
 
@@ -65,9 +65,9 @@ to use technoweenie's version (can be found also on github)"
     README
     RUNNING_UNIT_TESTS
     Rakefile
-    rtiss_acts_as_versioned.gemspec
     init.rb
     lib/acts_as_versioned.rb
+    rtiss_acts_as_versioned.gemspec
     test/abstract_unit.rb
     test/database.yml
     test/fixtures/authors.yml
