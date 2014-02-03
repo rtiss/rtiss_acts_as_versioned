@@ -60,7 +60,7 @@ task :coverage do
   sh "open coverage/index.html"
 end
 
-require 'rake/rdoctask'
+require 'rdoc/task'
 Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
   rdoc.title = "#{name} #{version}"
@@ -93,9 +93,8 @@ task :release => :build do
     exit!
   end
   sh "git commit --allow-empty -a -m 'Release #{version}'"
-  sh "git tag v#{version}"
-  sh "git push origin master"
-  sh "git push v#{version}"
+  sh "git tag #{version}"
+  sh "git push origin master --tags"
   sh "gem push pkg/#{name}-#{version}.gem"
 end
 

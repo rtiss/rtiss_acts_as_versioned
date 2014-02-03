@@ -65,7 +65,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :record_restored, :boolean
   end
   
-  add_index :widget_h, [:widget_id, :version], :unique => true
+  add_index :widgets_h, [:widget_id, :version], :unique => true
   
   create_table :landmarks, :force => true do |t|
     t.column :name, :string
