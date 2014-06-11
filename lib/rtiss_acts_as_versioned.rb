@@ -20,7 +20,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-VERSION = '0.7.3'
+VERSION = '0.7.4'
 
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
@@ -201,7 +201,7 @@ module ActiveRecord #:nodoc:
             options[:extend] = self.const_get(extension_module_name)
           end
 
-          class_eval <<-CLASS_METHODS
+          class_eval <<-CLASS_METHODS, __FILE__, __LINE__ + 1
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
