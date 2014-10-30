@@ -201,7 +201,7 @@ module ActiveRecord #:nodoc:
             options[:extend] = self.const_get(extension_module_name)
           end
 
-          class_eval <<-CLASS_METHODS, __FILE__, __LINE__ + 1
+          class_eval <<-CLASS_METHODS
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
