@@ -7,9 +7,6 @@
 ## You can find comprehensive Gem::Specification documentation, at
 ## http://docs.rubygems.org/read/chapter/20
 Gem::Specification.new do |s|
-  s.specification_version = 2 if s.respond_to? :specification_version=
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.rubygems_version = '1.3.5'
 
   ## Leave these as is they will be modified for you by the rake gemspec task.
   ## If your rubyforge_project name is different, then edit it and comment out
@@ -18,9 +15,6 @@ Gem::Specification.new do |s|
   s.version           = '0.7.4'
   s.date              = '2014-06-11'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
-
-  ## Make sure your summary is short. The description may be as long
-  ## as you like.
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
 
@@ -30,29 +24,17 @@ used by http://tiss.tuwien.ac.at and substantially differs from the original
 version. If you want to use acts_as_versioned in your project we recommend
 to use technoweenie's version (can be found also on github)"
 
-  ## List the primary authors. If there are a bunch of authors, it's probably
-  ## better to set the email to an email list or something. If you don't have
-  ## a custom homepage, consider using your GitHub URL or the like.
   s.authors  = ["Rick Olson", "Johannes Thoma", "Igor Jancev"]
   s.email    = 'igor.jancev@tuwien.ac.at'
   s.homepage = 'http://github.com/rtiss/rtiss_acts_as_versioned'
-
-  ## This gets added to the $LOAD_PATH so that 'lib/NAME.rb' can be required as
-  ## require 'NAME.rb' or'/lib/NAME/file.rb' can be as require 'NAME/file.rb'
-  s.require_paths = %w[lib]
-
-  ## Specify any RDoc options here. You'll want to add your README and
-  ## LICENSE files to the extra_rdoc_files list.
+  s.require_paths = ["lib"]
   s.rdoc_options = ["--charset=UTF-8"]
   s.extra_rdoc_files = %w[README MIT-LICENSE CHANGELOG]
 
-  ## List your runtime dependencies here. Runtime dependencies are those
-  ## that are needed for an end user to actually USE your code.
-  s.add_dependency('activerecord', [">= 3.0.9"])
-
-  ## List your development dependencies here. Development dependencies are
-  ## those that are only needed during development
-  s.add_development_dependency('sqlite3-ruby', ["~> 1.3.1"])
+  s.add_dependency 'activerecord', ">= 3.0.9"
+  s.add_development_dependency 'sqlite3-ruby', "~> 1.3.1"
+  s.add_development_dependency 'rails', "~> 3.0.20"
+  s.add_development_dependency 'mysql', "~> 2.8.1"
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE
