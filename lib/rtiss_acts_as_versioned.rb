@@ -276,7 +276,7 @@ module ActiveRecord #:nodoc:
               end
 
               new_version = clone
-              new_version.version += 1
+              # new_version.version += 1
               new_version.send("#{self.original_class.deleted_in_original_table_flag}=", false)
               new_version.send("#{self.original_class.record_restored_flag}=", true)
               if new_version.respond_to? :updated_at=
