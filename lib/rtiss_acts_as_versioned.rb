@@ -271,18 +271,19 @@ module ActiveRecord #:nodoc:
               if restored_record.respond_to? :updated_at=
                 restored_record.updated_at = Time.now
               end
+              restored_record.send("#{restored_record.version_column}=", restored_record.versions.calculate(:maximum, restored_record.version_column).to_i + 1)
               unless restored_record.save_without_revision(perform_validation)
                 raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
               end
-
-              new_version = clone
-              # new_version.version += 1
-              new_version.send("#{self.original_class.deleted_in_original_table_flag}=", false)
-              new_version.send("#{self.original_class.record_restored_flag}=", true)
-              if new_version.respond_to? :updated_at=
-                new_version.updated_at = Time.now
-              end
-              new_version.save!
+              restored_record.save_version(true, false, true)
+#              new_version = clone
+#              # new_version.version += 1
+#              new_version.send("#{self.original_class.deleted_in_original_table_flag}=", false)
+#              new_version.send("#{self.original_class.record_restored_flag}=", true)
+#              if new_version.respond_to? :updated_at=
+#                new_version.updated_at = Time.now
+#              end
+#              new_version.save!
             end
 
             def original_record_exists?
@@ -307,15 +308,15 @@ module ActiveRecord #:nodoc:
         end
 
         # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
-        def save_version
-          if @saving_version
+        def save_version(saving_version=false, deleted_flag=false, restored_flag=false)
+          if @saving_version || saving_version
             @saving_version = nil
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
             rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
-            rev.send("#{self.class.deleted_in_original_table_flag}=", false)
-            rev.send("#{self.class.record_restored_flag}=", false)
+            rev.send("#{self.class.deleted_in_original_table_flag}=", deleted_flag)
+            rev.send("#{self.class.record_restored_flag}=", restored_flag)
             if rev.respond_to? :updated_at=
               rev.updated_at = Time.now
             end
@@ -351,9 +352,11 @@ module ActiveRecord #:nodoc:
         # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
         def revert_to(version)
           if version.is_a?(self.class.versioned_class)
+            #@reverted_from = version.version
             return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
           else
-            return false unless version = versions.send("find_by_#{self.class.version_column}", version)
+            #@reverted_from = version
+            return false unless version = versions.where(self.class.version_column => version).first
           end
           self.clone_versioned_model(version, self)
           send("#{self.class.version_column}=", version.send(self.class.version_column))
@@ -363,7 +366,14 @@ module ActiveRecord #:nodoc:
         # Reverts a model to a given version and saves the model.
         # Takes either a version number or an instance of the versioned model
         def revert_to!(version)
-          revert_to(version) ? save_without_revision : false
+#          ver = (version.is_a?(self.class.versioned_class) ? version.send(self.class.versioned_foreign_key) : version)
+          if revert_to(version)
+            set_new_version
+            save_without_revision
+            save_version
+          else
+            false
+          end
         end
 
         # Temporarily turns off Optimistic Locking while saving.  Used when reverting so that a new version is not created.
@@ -487,16 +497,16 @@ module ActiveRecord #:nodoc:
         end
 
         protected
-          # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
-          def set_new_version
-            @saving_version = new_record? || save_version?
-            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
-          end
+        # sets the new version before saving
+        def set_new_version
+          @saving_version = new_record? || save_version?
+          self.send("#{self.class.version_column}=", next_version) if new_record? || save_version?
+        end
 
-          # Gets the next available version for the current record, or 1 for a new record
-          def next_version
-            (new_record? ? 0 : versions.calculate(:maximum, version_column).to_i) + 1
-          end
+        # Gets the next available version for the current record, or 1 for a new record
+        def next_version
+          (new_record? ? 0 : versions.calculate(:maximum, version_column).to_i) + 1
+        end
 
         module ClassMethods
           # Returns an array of columns that are versioned.  See non_versioned_columns
