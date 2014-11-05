@@ -314,8 +314,8 @@ module ActiveRecord #:nodoc:
         end
 
         # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
-        def save_version(saving_version=false, deleted_flag=false, restored_flag=false)
-          if @saving_version || saving_version
+        def save_version(save_this=false, deleted_flag=false, restored_flag=false)
+          if @saving_version || save_this
             @saving_version = nil
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
