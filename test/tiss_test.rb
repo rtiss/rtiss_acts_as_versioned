@@ -127,6 +127,25 @@ class TissTest < ActiveSupport::TestCase
     assert v.record_restored, "Record_restored doesn't show that the record was undeleted (should be true) for the version record created upon restore"
   end
 
+  def test_restore_and_destroy_with_revision_on_every_change
+    r = Rolle.new(:name => 'karin')
+    assert r.save
+    r.name = 'zak'
+    assert r.save
+    assert_equal 2, Rolle::Version.count
+    r.destroy
+    assert_equal 0, Rolle.count
+    assert_equal 3, Rolle::Version.count
+    assert version = r.find_version(3)
+    assert version.deleted_in_original_table?
+    assert version = r.find_version(2)
+    version.restore
+    assert r = Rolle.first
+    assert r.find_newest_version.record_restored?
+    assert_equal 4, Rolle::Version.count
+    assert_equal 4, r.version
+  end
+
   def test_original_record_exists
     o = create_object("lebt")
     oid = o.id
