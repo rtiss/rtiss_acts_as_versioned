@@ -75,14 +75,6 @@ end
 
 #############################################################################
 #
-# Custom tasks (add your own tasks here)
-#
-#############################################################################
-
-
-
-#############################################################################
-#
 # Packaging tasks
 #
 #############################################################################
@@ -90,6 +82,7 @@ end
 task :release => :build do
   sh "git commit --allow-empty -a -m 'Release #{version}'"
   sh "git tag #{version}"
+  sh "git push origin master"
   sh "git push origin master --tags"
   sh "gem push pkg/#{name}-#{version}.gem"
 end
