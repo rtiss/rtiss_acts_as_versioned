@@ -111,18 +111,39 @@ class TissTest < ActiveSupport::TestCase
     assert !v.deleted_in_original_table
     assert !v.record_restored, "Record_restored shows that the record was undeleted (should be false) for a newly created record"
 
+    old_version = o.version
     o.destroy
     v = o.find_newest_version
-    assert v.deleted_in_original_table
+    assert v.deleted_in_original_table, "Deleted-Flag in versioned record is not set"
+    assert v.version == old_version + 1, "Destroy did not increment version number in history record"
 
     v.restore
     assert !v.record_restored, "Record_restored shows that the record was undeleted (should be false) for the restored version record (but should be in the newly created record)"
     o = Rolle.find oid
-    assert v.version == o.version, "Version field not restored correctly"
 
     v = o.find_newest_version
+    assert v.version == old_version + 2, "Version field not restored correctly"
     assert !v.deleted_in_original_table, "Deleted_in_original_table doesn't show that the record was undeleted (should be false)"
     assert v.record_restored, "Record_restored doesn't show that the record was undeleted (should be true) for the version record created upon restore"
+  end
+
+  def test_restore_and_destroy_with_revision_on_every_change
+    r = Rolle.new(:name => 'karin')
+    assert r.save
+    r.name = 'zak'
+    assert r.save
+    assert_equal 2, Rolle::Version.count
+    r.destroy
+    assert_equal 0, Rolle.count
+    assert_equal 3, Rolle::Version.count
+    assert version = r.find_version(3)
+    assert version.deleted_in_original_table?
+    assert version = r.find_version(2)
+    version.restore
+    assert r = Rolle.first
+    assert r.find_newest_version.record_restored?
+    assert_equal 4, Rolle::Version.count
+    assert_equal 4, r.version
   end
 
   def test_original_record_exists
@@ -193,7 +214,8 @@ class TissTest < ActiveSupport::TestCase
     assert r.save
     r.name = 'zak'
     assert r.save
-    assert_equal 2, r.versions.size 
+    r.reload
+    assert_equal 2, r.versions.size
     assert_equal 2, r.versions.count
   end
 
@@ -205,9 +227,9 @@ class TissTest < ActiveSupport::TestCase
     
     r = Rolle.new(:name => 'karin')
     assert r.save
-    
     assert_raises RuntimeError do version.restore end
-    assert_nothing_raised do version.restore(perform_validations = false) end
+    #assert_nothing_raised do
+      version.restore(perform_validations = false) #end
   end
 
   def test_save_without_revision
