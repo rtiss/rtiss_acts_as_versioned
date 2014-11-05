@@ -271,7 +271,13 @@ module ActiveRecord #:nodoc:
               if restored_record.respond_to? :updated_at=
                 restored_record.updated_at = Time.now
               end
-              restored_record.send("#{restored_record.version_column}=", restored_record.versions.calculate(:maximum, restored_record.version_column).to_i + 1)
+              # DON'T EVEN THINK ABOUT CALCULATING THE VERSION NUMBER USING THE VERSIONS ASSOCIATION HERE:
+              # There is a problem in ActiveRecord. An association relation will be converted to an array internally, when the SQL-select is
+              # executed.
+              # Some ActiveRecord-Methods (for example #ActiveRecord::Base::AutosaveAssociation#save_collection_association) try to use ActiveRecord methods
+              # with these Relations, and if these Releations have been converted to arrays, these calls fail with an Exception
+              new_version_number = self.class.where(self.original_class.versioned_foreign_key => id).order('id desc').first.send(restored_record.version_column).to_i + 1
+              restored_record.send("#{restored_record.version_column}=", new_version_number)
               unless restored_record.save_without_revision(perform_validation)
                 raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
               end
@@ -476,7 +482,7 @@ module ActiveRecord #:nodoc:
         def find_newest_version
           return nil if self.id.nil?
 
-          self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id}", :order => "version DESC")
+          self.class.versioned_class.where("#{self.class.versioned_foreign_key} = #{self.id}").order("version DESC").first
         end
 
         def highest_version
@@ -491,7 +497,7 @@ module ActiveRecord #:nodoc:
         def find_version(version)
           return nil if self.id.nil?
 
-          ret = self.class.versioned_class.find(:first, :conditions => "#{self.class.versioned_foreign_key} = #{self.id} and version=#{version}") # TODO: version column
+          ret = self.class.versioned_class.where("#{self.class.versioned_foreign_key} = #{self.id} and #{self.class.version_column}=#{version}").first
           raise "find_version: version #{version} not found in database" unless ret
           ret
         end
