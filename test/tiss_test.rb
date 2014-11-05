@@ -193,7 +193,8 @@ class TissTest < ActiveSupport::TestCase
     assert r.save
     r.name = 'zak'
     assert r.save
-    assert_equal 2, r.versions.size 
+    r.reload
+    assert_equal 2, r.versions.size
     assert_equal 2, r.versions.count
   end
 

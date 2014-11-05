@@ -231,6 +231,7 @@ module ActiveRecord #:nodoc:
           const_set(versioned_class_name, Class.new(ActiveRecord::Base)).class_eval do
             def self.reloadable? ; false ; end
             # find first version before the given version
+            # TODO: replace "version" in selects with version_column, use select-method instead of find
             def self.before(version)
               find :first, :order => 'version desc',
                 :conditions => ["#{original_class.versioned_foreign_key} = ? and version < ?", version.send(original_class.versioned_foreign_key), version.version]
@@ -272,10 +273,10 @@ module ActiveRecord #:nodoc:
                 restored_record.updated_at = Time.now
               end
               # DON'T EVEN THINK ABOUT CALCULATING THE VERSION NUMBER USING THE VERSIONS ASSOCIATION HERE:
-              # There is a problem in ActiveRecord. An association relation will be converted to an array internally, when the SQL-select is
+              # There is a problem in ActiveRecord. An association Relation will be converted to an Array internally, when the SQL-select is
               # executed.
               # Some ActiveRecord-Methods (for example #ActiveRecord::Base::AutosaveAssociation#save_collection_association) try to use ActiveRecord methods
-              # with these Relations, and if these Releations have been converted to arrays, these calls fail with an Exception
+              # with these Relations, and if these Relations have been converted to Arrays, these calls fail with an Exception
               new_version_number = self.class.where(self.original_class.versioned_foreign_key => id).order('id desc').first.send(restored_record.version_column).to_i + 1
               restored_record.send("#{restored_record.version_column}=", new_version_number)
               unless restored_record.save_without_revision(perform_validation)
