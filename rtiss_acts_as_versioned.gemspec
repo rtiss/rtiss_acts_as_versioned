@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
-  s.version           = '0.7.7'
-  s.date              = '2014-11-03'
+  s.version           = '0.7.8'
+  s.date              = '2014-11-10'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
