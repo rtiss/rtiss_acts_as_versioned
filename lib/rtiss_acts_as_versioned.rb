@@ -173,7 +173,7 @@ module ActiveRecord #:nodoc:
 
           cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
             :version_column, :max_version_limit, :track_altered_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
-            :version_association_options, :version_if_changed, :deleted_in_original_table_flag, :record_restored_flag
+            :version_association_options, :version_if_changed, :deleted_in_original_table_flag, :record_restored_column
 
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
@@ -182,7 +182,7 @@ module ActiveRecord #:nodoc:
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
           self.version_column               = options[:version_column]     || 'version'
           self.deleted_in_original_table_flag = options[:deleted_in_original_table_flag]     || 'deleted_in_original_table'
-          self.record_restored_flag = options[:record_restored_flag]     || 'record_restored'
+          self.record_restored_column       = options[:record_restored_column]     || 'record_restored'
           self.version_sequence_name        = options[:sequence_name]
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
@@ -264,7 +264,7 @@ module ActiveRecord #:nodoc:
               version_hash = self.attributes
               version_hash.delete "id"
               version_hash.delete self.original_class.deleted_in_original_table_flag.to_s
-              version_hash.delete self.original_class.record_restored_flag.to_s
+              version_hash.delete self.original_class.record_restored_column.to_s
               version_hash.delete self.original_class.versioned_foreign_key.to_s
 
               restored_record = self.original_class.new(version_hash)
@@ -282,15 +282,16 @@ module ActiveRecord #:nodoc:
               unless restored_record.save_without_revision(perform_validation)
                 raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
               end
-              restored_record.save_version(true, false, true)
-#              new_version = clone
-#              # new_version.version += 1
-#              new_version.send("#{self.original_class.deleted_in_original_table_flag}=", false)
-#              new_version.send("#{self.original_class.record_restored_flag}=", true)
-#              if new_version.respond_to? :updated_at=
-#                new_version.updated_at = Time.now
-#              end
-#              new_version.save!
+              restored_record.save_version(true, false, self.send(self.original_class.version_column))
+            end
+
+            def record_restored?
+              self.read_attribute(self.original_class.record_restored_column) != nil
+            end
+            alias :record_restored :record_restored?
+
+            def record_restored_from_version
+              self.read_attribute(self.original_class.record_restored_column)
             end
 
             def original_record_exists?
@@ -315,7 +316,7 @@ module ActiveRecord #:nodoc:
         end
 
         # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
-        def save_version(save_this=false, deleted_flag=false, restored_flag=false)
+        def save_version(save_this=false, deleted_flag=false, restored_from_version=nil)
           if @saving_version || save_this
             @saving_version = nil
             rev = self.class.versioned_class.new
@@ -323,7 +324,7 @@ module ActiveRecord #:nodoc:
             rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.send("#{self.class.deleted_in_original_table_flag}=", deleted_flag)
-            rev.send("#{self.class.record_restored_flag}=", restored_flag)
+            rev.send("#{self.class.record_restored_column}=", restored_from_version)
             if rev.respond_to? :updated_at=
               rev.updated_at = Time.now
             end
@@ -339,7 +340,7 @@ module ActiveRecord #:nodoc:
           rev.send("#{self.class.version_column}=", highest_version+1)
           rev.send("#{self.class.versioned_foreign_key}=", id)
           rev.send("#{self.class.deleted_in_original_table_flag}=", true)
-          rev.send("#{self.class.record_restored_flag}=", false)
+          rev.send("#{self.class.record_restored_column}=", nil)
           if rev.respond_to? :updated_at=
             rev.updated_at = Time.now
           end
@@ -359,10 +360,10 @@ module ActiveRecord #:nodoc:
         # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
         def revert_to(version)
           if version.is_a?(self.class.versioned_class)
-            #@reverted_from = version.version
+            @reverted_from = version.send(self.class.version_column)
             return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
           else
-            #@reverted_from = version
+            @reverted_from = version
             return false unless version = versions.where(self.class.version_column => version).first
           end
           self.clone_versioned_model(version, self)
@@ -373,11 +374,10 @@ module ActiveRecord #:nodoc:
         # Reverts a model to a given version and saves the model.
         # Takes either a version number or an instance of the versioned model
         def revert_to!(version)
-#          ver = (version.is_a?(self.class.versioned_class) ? version.send(self.class.versioned_foreign_key) : version)
           if revert_to(version)
             set_new_version
             save_without_revision
-            save_version
+            save_version(true, false, @reverted_from)
           else
             false
           end
@@ -540,7 +540,7 @@ module ActiveRecord #:nodoc:
               t.column versioned_foreign_key, :integer
               t.column version_column, :integer
               t.column deleted_in_original_table_flag, :boolean, :default => false
-              t.column record_restored_flag, :boolean, :default => false
+              t.column record_restored_column, :integer, :default => nil
             end
 
             self.versioned_columns.each do |col| 
