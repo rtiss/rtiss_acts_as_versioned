@@ -89,10 +89,10 @@ end
 
 task :release => :build do
   sh "git commit --allow-empty -a -m 'Release #{version}'"
-  sh "git tag #{version}"
-  sh "git push origin master"
-  sh "git push origin master --tags"
-  sh "gem push pkg/#{name}-#{version}.gem"
+  sh "git tag #{version}"                   # create new release tag
+  sh "git push origin master"               # push current branch
+  sh "git push origin #{version}"           # push the new release tag
+  sh "gem push pkg/#{name}-#{version}.gem"  # push the gem to RubyGems.org
 end
 
 task :build => :gemspec do
