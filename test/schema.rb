@@ -19,7 +19,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :author_id, :integer
     t.column :revisor_id, :integer
     t.column :deleted_in_original_table, :boolean
-    t.column :record_restored, :boolean
+    t.column :record_restored, :integer, :precision => 38,  :scale => 0, :default => nil
   end
   
   add_index :pages_h, [:page_id, :version], :unique => true
@@ -31,6 +31,7 @@ ActiveRecord::Schema.define(:version => 0) do
   
   create_table :locked_pages, :force => true do |t|
     t.column :lock_version, :integer
+    t.column :version, :integer
     t.column :title, :string, :limit => 255
     t.column :body, :text
     t.column :type, :string, :limit => 255
@@ -38,16 +39,17 @@ ActiveRecord::Schema.define(:version => 0) do
 
   create_table :locked_pages_revisions, :force => true do |t|
     t.column :page_id, :integer
-    t.column :lock_version, :integer
+    t.column :version, :integer
+    #t.column :lock_version, :integer
     t.column :title, :string, :limit => 255
     t.column :body, :text
     t.column :version_type, :string, :limit => 255
     t.column :updated_at, :datetime
     t.column :deleted_in_original_table, :boolean
-    t.column :record_restored, :boolean
+    t.column :record_restored, :integer, :precision => 38,  :scale => 0, :default => nil
   end
   
-  add_index :locked_pages_revisions, [:page_id, :lock_version], :unique => true
+  add_index :locked_pages_revisions, [:page_id, :version], :unique => true
 
   create_table :widgets, :force => true do |t|
     t.column :name, :string, :limit => 50
@@ -62,7 +64,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :version, :integer
     t.column :updated_at, :datetime
     t.column :deleted_in_original_table, :boolean
-    t.column :record_restored, :boolean
+    t.column :record_restored, :integer, :precision => 38,  :scale => 0, :default => nil
   end
   
   add_index :widgets_h, [:widget_id, :version], :unique => true
@@ -83,7 +85,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :doesnt_trigger_version,:string
     t.column :version, :integer
     t.column :deleted_in_original_table, :boolean
-    t.column :record_restored, :boolean
+    t.column :record_restored, :integer, :precision => 38,  :scale => 0, :default => nil
   end
   
   add_index :landmark_h, [:landmark_id, :version], :unique => true
@@ -111,7 +113,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string   "name",                      :limit => 50
     t.string   "beschreibung",              :limit => 250
     t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
-    t.boolean  "record_restored",                 :precision => 1,  :scale => 0
+    t.integer  "record_restored",                           :precision => 38,  :scale => 0, :default => nil
     t.integer  "parent_id",                                 :precision => 38, :scale => 0
     t.string   "beschreibung_intern",       :limit => 4000
     t.string   "geltungsbereich",           :limit => 1000
@@ -144,7 +146,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string   "name",                      :limit => 50
     t.string   "beschreibung",              :limit => 250
     t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
-    t.boolean  "record_restored",                 :precision => 1,  :scale => 0
+    t.integer  "record_restored",                           :precision => 38,  :scale => 0, :default => nil
     t.integer  "parent_id",                                 :precision => 38, :scale => 0
     t.string   "beschreibung_intern",       :limit => 4000
     t.string   "geltungsbereich",           :limit => 1000
