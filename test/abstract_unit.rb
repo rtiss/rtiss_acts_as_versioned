@@ -1,21 +1,16 @@
-require "rubygems"
 require "bundler"
 Bundler.setup(:default, :development)
 
 $:.unshift(File.dirname(__FILE__) + '/../lib')
-require 'test/unit'
+require 'minitest/autorun'
 require 'active_support'
 require 'active_record'
 require 'active_record/fixtures'
 require 'active_record/test_case'
-
-begin
-  require 'ruby-debug'
-  Debugger.start
-rescue LoadError
-end
-
+require 'active_record/deprecated_finders'
 require 'rtiss_acts_as_versioned'
+
+ActiveSupport::TestCase.test_order = :sorted
 
 config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
 ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")

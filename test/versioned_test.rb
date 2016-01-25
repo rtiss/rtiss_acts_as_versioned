@@ -1,5 +1,6 @@
 require File.join(File.dirname(__FILE__), 'abstract_unit')
 require File.join(File.dirname(__FILE__), 'fixtures/page')
+require File.join(File.dirname(__FILE__), 'fixtures/landmark')
 require File.join(File.dirname(__FILE__), 'fixtures/widget')
 
 class VersionedTest < ActiveSupport::TestCase
@@ -280,7 +281,6 @@ class VersionedTest < ActiveSupport::TestCase
     association = Widget.reflect_on_association(:versions)
     options = association.options
     #assert_equal :nullify, options[:dependent] #Removed! we do not nullify the foreign key, because on restore we want to set the correct original ID
-    assert_equal 'version desc', options[:order]
     assert_equal 'widget_id', options[:foreign_key]
 
     widget = Widget.create! :name => 'new widget'

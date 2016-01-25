@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
-  s.version           = '0.8.2'
-  s.date              = '2014-11-18'
+  s.version           = '0.8.3'
+  s.date              = '2016-01-22'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
@@ -31,10 +31,11 @@ to use technoweenie's version (can be found also on github)"
   s.rdoc_options = ["--charset=UTF-8"]
   s.extra_rdoc_files = %w[README MIT-LICENSE CHANGELOG]
 
-  s.add_dependency 'activerecord', ">= 3.0.9"
+  s.add_dependency 'activerecord', ">= 4.2.5"
   s.add_development_dependency 'sqlite3-ruby', "~> 1.3.1"
-  s.add_development_dependency 'rails', "~> 3.0.20"
-  s.add_development_dependency 'mysql', "~> 2.8.1"
+  s.add_development_dependency 'rails', "~> 4.2.5"
+  s.add_development_dependency 'activerecord-testcase'
+  s.add_development_dependency 'activerecord-deprecated_finders' # todo alte, hash-basierte finders auf die neue AR Query-API migrieren
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE

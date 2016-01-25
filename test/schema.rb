@@ -1,4 +1,4 @@
-ActiveRecord::Schema.define(:version => 0) do
+ActiveRecord::Schema.define(:version => 1) do
   create_table :pages, :force => true do |t|
     t.column :version, :integer
     t.column :title, :string, :limit => 255

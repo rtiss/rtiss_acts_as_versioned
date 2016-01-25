@@ -20,7 +20,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-VERSION = '0.8.2'
+VERSION = '0.8.3'
 
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
@@ -204,16 +204,16 @@ module ActiveRecord #:nodoc:
             options[:extend] = self.const_get(extension_module_name)
           end
 
-          class_eval <<-CLASS_METHODS
+          class_eval <<-CLASS_METHODS, __FILE__, __LINE__ + 1
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= find(:first, :order => '#{version_column}')
+                @earliest ||= order('#{version_column}').first
               end
 
               # find latest version of this record
               def latest
-                @latest ||= find(:first, :order => '#{version_column} desc')
+                @latest ||= order('#{version_column} desc').first
               end
             end
             before_save  :set_new_version
@@ -236,14 +236,12 @@ module ActiveRecord #:nodoc:
             # find first version before the given version
             # TODO: replace "version" in selects with version_column, use select-method instead of find
             def self.before(version)
-              find :first, :order => 'version desc',
-                :conditions => ["#{original_class.versioned_foreign_key} = ? and version < ?", version.send(original_class.versioned_foreign_key), version.version]
+              where("#{original_class.versioned_foreign_key} = ? and version < ?", version.send(original_class.versioned_foreign_key), version.version).order('version desc').first
             end
 
             # find first version after the given version.
             def self.after(version)
-              find :first, :order => 'version',
-                :conditions => ["#{original_class.versioned_foreign_key} = ? and version > ?", version.send(original_class.versioned_foreign_key), version.version]
+              where("#{original_class.versioned_foreign_key} = ? and version > ?", version.send(original_class.versioned_foreign_key), version.version).order('version').first
             end
 
             def previous
@@ -367,7 +365,8 @@ module ActiveRecord #:nodoc:
             return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
           else
             @reverted_from = version
-            return false unless version = versions.where(self.class.version_column => version).first
+            version = versions.where(self.class.version_column => version).first
+            return false unless version
           end
           self.clone_versioned_model(version, self)
           send("#{self.class.version_column}=", version.send(self.class.version_column))
@@ -471,7 +470,7 @@ module ActiveRecord #:nodoc:
 
           options = args.extract_options!
           version_condition = "#{self.class.versioned_foreign_key} = #{self.id}"
-          if options[:conditions] then
+          if options[:conditions]
             options[:conditions] += " and #{version_condition}"
           else
             options[:conditions] = version_condition
@@ -549,7 +548,7 @@ module ActiveRecord #:nodoc:
             self.versioned_columns.each do |col| 
               self.connection.add_column versioned_table_name, col.name, col.type, 
                 :limit     => col.limit, 
-                :default   => col.default,
+                :default   => col.cast_type.type_cast_from_database(col.default),  # convert strings to ruby types
                 :scale     => col.scale,
                 :precision => col.precision
             end
@@ -557,7 +556,7 @@ module ActiveRecord #:nodoc:
             if type_col = self.columns_hash[inheritance_column]
               self.connection.add_column versioned_table_name, versioned_inheritance_column, type_col.type, 
                 :limit     => type_col.limit, 
-                :default   => type_col.default,
+                :default   => type_col.cast_type.type_cast_from_database(type_col.default),  # convert strings to ruby types
                 :scale     => type_col.scale,
                 :precision => type_col.precision
             end
@@ -571,12 +570,12 @@ module ActiveRecord #:nodoc:
           end
 
           def restore_deleted(id)
-            version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id}", :order => "version DESC")
+            version_record = versioned_class.where("#{versioned_foreign_key} = #{id}").order("version DESC").first
             version_record.restore
           end
 
           def restore_deleted_version(id, version)
-            version_record = versioned_class.find(:first, :conditions => "#{versioned_foreign_key} = #{id} and version = #{version}")
+            version_record = versioned_class.where("#{versioned_foreign_key} = #{id} and version = #{version}").first
             version_record.restore
           end
 
@@ -624,7 +623,6 @@ module ActiveRecord #:nodoc:
 end
 
 # TISS extension: do not pull this.
-# TODO: Move to TISS app (initializer)
 module ActiveRecord #:nodoc:
   module ConnectionAdapters #:nodoc:
     class TableDefinition

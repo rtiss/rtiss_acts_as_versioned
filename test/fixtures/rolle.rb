@@ -1,5 +1,5 @@
 class Rolle < ActiveRecord::Base
-	set_table_name 'rolle'
+	self.table_name = 'rolle'
 	acts_as_versioned
 
 	validates_presence_of :name

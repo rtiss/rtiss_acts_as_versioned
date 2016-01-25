@@ -45,7 +45,7 @@ class TissTest < ActiveSupport::TestCase
   
   def test_deleted_in_original_table
     record = create_object('test deleted_in_orginal_table')
-    version_record = record.versions.find(:first)
+    version_record = record.versions.first
     assert version_record != nil
 
     assert !version_record.deleted_in_original_table
