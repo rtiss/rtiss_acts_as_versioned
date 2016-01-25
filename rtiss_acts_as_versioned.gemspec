@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
   s.version           = '0.8.3'
-  s.date              = '2016-01-22'
+  s.date              = '2016-01-25'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
@@ -60,7 +60,7 @@ to use technoweenie's version (can be found also on github)"
     test/fixtures/locked_pages.yml
     test/fixtures/locked_pages_revisions.yml
     test/fixtures/locked_rolle.rb
-    test/fixtures/migrations/1_add_versioned_tables.rb
+    test/fixtures/migrations/2_add_versioned_tables.rb
     test/fixtures/page.rb
     test/fixtures/pages.yml
     test/fixtures/pages_h.yml
