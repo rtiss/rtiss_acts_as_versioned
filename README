@@ -7,6 +7,7 @@ This is the patched version for rtiss.
 Versions 0.6.x (rails2 branch) are for rails 2.x
 Versions 0.7.x (rails3 branch) are for rails 3.x
 Versions 0.8.x (master branch) are for rails 4.x
+Versions 0.9.x (master branch) are for rails 5.x (also works with rails 4.x)
 
 == Resources
 
