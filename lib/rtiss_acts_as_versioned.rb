@@ -20,7 +20,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-VERSION = '0.8.3'
+VERSION = '0.9.0'
 
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
@@ -465,6 +465,9 @@ module ActiveRecord #:nodoc:
 
         def empty_callback() end #:nodoc:
 
+=begin
+# Alte finder-Syntax ab Rails 5 nicht mehr verwendbar.
+# Assoziation versions stattdessen verwenden
         def find_versions(*args)
           return [] if self.id.nil?
 
@@ -481,6 +484,7 @@ module ActiveRecord #:nodoc:
             versions.find(options)
           end
         end
+=end
 
         def find_newest_version
           return nil if self.id.nil?

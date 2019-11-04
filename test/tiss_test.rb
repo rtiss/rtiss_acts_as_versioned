@@ -1,31 +1,29 @@
 # -*- encoding : utf-8 -*-
+require 'test_helper'
 
-require File.join(File.dirname(__FILE__), 'fixtures/rolle')
-require File.join(File.dirname(__FILE__), 'fixtures/locked_rolle')
-
-class TissTest < ActiveSupport::TestCase
+class Tools::ActsAsVersionedTest < ActiveSupport::TestCase
   def test_versioning
-    anzahl = Rolle.count
-    
-    oid1 = create_object('test').id
+    anzahl = Tools::LupKonfigKategorie.count
+
+    oid1 = create_object('java').id
     oid2 = create_object('tuwien').id
     oid3 = create_object('ruby').id
     oid4 = create_object('rails').id
     oid5 = create_object('times').id
-    
-    assert_equal anzahl+5, Rolle.count
-    
-    2.upto(5) {|index| edit_object(oid1, "test" + index.to_s)}
+
+    assert_equal anzahl+5, Tools::LupKonfigKategorie.count
+
+    2.upto(5) {|index| edit_object(oid1, "java" + index.to_s)}
     2.upto(7) {|index| edit_object(oid2, "tuwien" + index.to_s)}
     2.upto(9) {|index| edit_object(oid3, "ruby" + index.to_s)}
     2.upto(6) {|index| edit_object(oid4, "rails" + index.to_s)}
     2.upto(3) {|index| edit_object_with_sleep(oid5, "times" + index.to_s)}
-    
+
     assert versions_correct?(oid1, 5)
     assert versions_correct?(oid2, 7)
     assert versions_correct?(oid3, 9)
     assert versions_correct?(oid4, 6)
-    
+
     assert timestamps?(oid1)
     assert timestamps?(oid2)
     assert timestamps?(oid3)
@@ -35,14 +33,14 @@ class TissTest < ActiveSupport::TestCase
     destroy_record(oid2)
     assert record_unavailable_in_original_table?(oid2)
     assert deleted_record_versioned?(oid2, 8)
-    
+
     restore_record(oid2)
     assert restored_record_available_in_original_table?(oid2)
     assert restored_record_versioned?(oid2, 9)
-    
+
     assert save_record_without_changes(oid1)
   end
-  
+
   def test_deleted_in_original_table
     record = create_object('test deleted_in_orginal_table')
     version_record = record.versions.first
@@ -59,17 +57,18 @@ class TissTest < ActiveSupport::TestCase
 
   def test_find_versions
     o = create_object("karin")
-    v = o.find_versions(:all)
+    v = o.versions
     assert_equal 1, v.count
     assert_equal v[0].name, "karin"
 
     edit_object(o.id, "zak")
-    v = o.find_versions(:all)
+    v.reload
+
     assert_equal 2, v.count
     assert_equal v[0].name, "karin"
     assert_equal v[1].name, "zak"
 
-    v = o.find_versions(:all, :conditions => "name = 'zak'")
+    v = o.versions.where("name = 'zak'")
     assert_equal 1, v.count
     assert_equal v[0].name, "zak"
 
@@ -77,13 +76,13 @@ class TissTest < ActiveSupport::TestCase
 #    assert_equal 1, v.count
 #    assert_equal v[0].name, "zak"
 
-    v = o.find_versions(:first)
+    v = o.versions.first
     assert_equal v.name, "karin"
 
-    v = o.find_versions(:last)
+    v = o.versions.last
     assert_equal v.name, "zak"
 
-    v = o.find_versions(:all, :order => "name desc")
+    v = o.versions.order("name desc")
     assert_equal 2, v.count
     assert_equal v[0].name, "zak"
     assert_equal v[1].name, "karin"
@@ -109,60 +108,14 @@ class TissTest < ActiveSupport::TestCase
 
     assert_raises(RuntimeError) { v.restore }
     assert !v.deleted_in_original_table
-    assert !v.record_restored, "Record_restored shows that the record was undeleted (should be false) for a newly created record"
 
-    old_version = o.version
     o.destroy
     v = o.find_newest_version
-    first_delete_version = v.version
-    assert v.deleted_in_original_table, "Deleted-Flag in versioned record is not set"
-    assert_equal old_version + 1, v.version, "Destroy did not increment version number in history record"
+    assert v.deleted_in_original_table
 
     v.restore
-    restored_version = v.version
-    assert !v.record_restored, "Record_restored shows that the record was undeleted (should be false) for the restored version record (but should be in the newly created record)"
-    o = Rolle.find oid
     v = o.find_newest_version
-    v_old = v
-    assert_equal v.version, o.version
-    assert_equal old_version + 2, v.version, "Version field not restored correctly"
-    assert !v.deleted_in_original_table, "Deleted_in_original_table doesn't show that the record was undeleted (should be false)"
-    assert v.record_restored, "Record_restored doesn't show that the record was undeleted (should be true) for the version record created upon restore"
-    assert_equal restored_version, v.record_restored_from_version
-
-    o.name = 'kaputt'
-    assert o.save
-    o.destroy
-    v = o.find_newest_version
-    v.restore
-    o = Rolle.find oid
-    assert_equal v.version + 1, o.version
-    assert_equal 'kaputt', o.name
-    assert_equal v.version, o.find_newest_version.record_restored_from_version
-    o.destroy
-    v_old.restore
-    o = Rolle.find oid
-    assert_equal 'lebt', o.name
-    assert_equal v_old.version, o.find_newest_version.record_restored_from_version
-  end
-
-  def test_restore_and_destroy_with_revision_on_every_change
-    r = Rolle.new(:name => 'karin')
-    assert r.save
-    r.name = 'zak'
-    assert r.save
-    assert_equal 2, Rolle::Version.count
-    r.destroy
-    assert_equal 0, Rolle.count
-    assert_equal 3, Rolle::Version.count
-    assert version = r.find_version(3)
-    assert version.deleted_in_original_table?
-    assert version = r.find_version(2)
-    version.restore
-    assert r = Rolle.first
-    assert r.find_newest_version.record_restored?
-    assert_equal 4, Rolle::Version.count
-    assert_equal 4, r.version
+    assert !v.deleted_in_original_table
   end
 
   def test_original_record_exists
@@ -184,7 +137,7 @@ class TissTest < ActiveSupport::TestCase
     oid = o.id
     v = o.find_version(1)
     assert v!=nil
-    
+
     assert_raises(RuntimeError) { restore_record(oid) }
     assert !v.deleted_in_original_table
 
@@ -198,15 +151,15 @@ class TissTest < ActiveSupport::TestCase
     assert v!=nil
     assert !v.deleted_in_original_table
   end
-    
+
   def test_restore_deleted_version
     o = create_object("lebt")
     oid = o.id
     v = o.find_version(1)
     assert v!=nil
-    
+
     edit_object(oid, "nicht")
-    x = Rolle.find(oid)
+    x = Tools::LupKonfigKategorie.find(oid)
     assert x.name == "nicht"
 
     v = o.find_version(2)
@@ -217,105 +170,76 @@ class TissTest < ActiveSupport::TestCase
     assert v!=nil
     assert v.deleted_in_original_table
 
-    Rolle.restore_deleted_version(oid, 1)
-    x = Rolle.find(oid)
+    Tools::LupKonfigKategorie.restore_deleted_version(oid, 1)
+    x = Tools::LupKonfigKategorie.find(oid)
     assert x.name == "lebt"
   end
-    
+
+  def test_find_and_deleted_in_original_table
+    mitarbeiter = Personal::Mitarbeiter.create(:person_id=>6, :eintrittsdatum=>'1990-01-01')
+    rel_person_orgeinheit = Organisation::RelPersonOrgeinheit.create(:anstellbar_id=>mitarbeiter.id, :anstellbar_type=>'Personal::Mitarbeiter', :orgeinheit_id=>1, :person_id=>5, :lup_person_funktion_id=>1, :org_interne_id=>1)
+
+    assert rel_person_orgeinheit.save
+
+    rel_person_orgeinheit.destroy
+    assert rel_person_orgeinheit.alte_adressbuchdaten_wiederherstellen
+
+#    assert_raises NoMethodError do rel_person_orgeinheit.alte_adressbuchdaten_wiederherstellen end
+  end
+
   def test_destroy_unsaved_record
-    o = Rolle.new(:name => "Nicht Speichern")
+    o = Tools::LupKonfigKategorie.new(:name => "Nicht Speichern")
     assert_nothing_raised do o.destroy end
     assert_equal o.highest_version, -1
   end
 
-  def test_versions_after_save
-    r = Rolle.new(:name => 'karin')
-    assert r.save
-    r.name = 'zak'
-    assert r.save
-    r.reload
-    assert_equal 2, r.versions.size
-    assert_equal 2, r.versions.count
-  end
-
-  def test_restore_without_validations
-    r = Rolle.new(:name => 'karin')
-    assert r.save
-    version = r.find_newest_version
-    r.destroy
-    
-    r = Rolle.new(:name => 'karin')
-    assert r.save
-    assert_raises RuntimeError do version.restore end
-    #assert_nothing_raised do
-      version.restore(perform_validations = false) #end
-  end
-
-  def test_save_without_revision
-    r = Rolle.new(:name => 'karin')
-    assert_equal true, r.save_without_revision
-    
-    r = Rolle.new(:name => 'karin')
-    assert_equal false, r.save_without_revision
-  end
-
-=begin
-# Wait until experimenting-with-optimistic-locking is merged.
-  def test_locked_rolle
-    r = LockedRolle.new(:name => 'karin')
-    r.save
-    assert_equal 1, r.find_newest_version.version
-    r.name = 'zak'
-    r.save
-    assert_equal 2, r.find_newest_version.version
-  end
-=end
-
-private
+  private
   def create_object(bezeichnung)
-    o = Rolle.new(:name => bezeichnung)
-    o.save
+    puts "create_object: #{bezeichnung}"
+    o = Tools::LupKonfigKategorie.new(:name => bezeichnung)
+    o.save!
     return o
   end
-  
+
   def edit_object(id, bezeichnung)
-    Rolle.find(id).update_attributes(:name=>bezeichnung)
+    puts "edit_object: #{id}: #{bezeichnung}"
+    Tools::LupKonfigKategorie.find(id).update_attributes!(:name=>bezeichnung)
   end
 
   def edit_object_with_sleep(id, bezeichnung)
     sleep(2)
-    Rolle.find(id).update_attributes(:name=>bezeichnung)
+    Tools::LupKonfigKategorie.find(id).update_attributes!(:name=>bezeichnung)
   end
 
   def versions_correct?(id, highest_version)
-    result = Rolle.find(id).versions.find(:all).size == highest_version
+    result = Tools::LupKonfigKategorie.find(id).versions.all.size == highest_version
     1.upto(highest_version) do |current_version|
-      current_version_record = Rolle.find(id).versions.find(:first, :conditions => "version = #{current_version}")
+      current_version_record = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version}")
       result = false if current_version_record.nil? || current_version_record.deleted_in_original_table == true
     end
     return result
   end
- 
+
   def timestamps?(id)
     result = true;
-    highest_version = Rolle.find(id).versions.find(:all).size
+    highest_version = Tools::LupKonfigKategorie.find(id).versions.all.size
     highest_version.downto(1) do |current_version|
       if current_version >= 2
-        rolle_current_version = Rolle.find(id).versions.find(:first, :conditions => "version = #{current_version}")
-        rolle_predecessor_version = Rolle.find(id).versions.find(:first, :conditions => "version = #{current_version-1}")
+        rolle_current_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version}")
+        rolle_predecessor_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version-1}")
         toleranz = rolle_current_version.created_at - rolle_predecessor_version.updated_at
         result = false if toleranz > 1.0
       end
     end
     return result
   end
-  
+
   def strong_timestamps?(id)
     result = true;
-    highest_version = Rolle.find(id).versions.find(:all).size
+    highest_version = Tools::LupKonfigKategorie.find(id).versions.all.size
     highest_version.downto(2) do |current_version|
-      rolle_current_version = Rolle.find(id).versions.find(:first, :conditions => "version = #{current_version}")
-      rolle_predecessor_version = Rolle.find(id).versions.find(:first, :conditions => "version = #{current_version-1}")
+      rolle_current_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version}")
+      rolle_predecessor_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version-1}")
       result = false unless rolle_current_version.created_at = rolle_predecessor_version.updated_at
       result = false unless rolle_current_version.created_at >= rolle_predecessor_version.created_at
     end
@@ -323,50 +247,49 @@ private
   end
 
   def destroy_record(id)
-    # Rolle.destroy(id)
-    Rolle.destroy(id)
+    Tools::LupKonfigKategorie.destroy(id)
   end
-  
+
   def record_unavailable_in_original_table?(id)
     begin
-      Rolle.find(id)
+      Tools::LupKonfigKategorie.find(id)
       return false
     rescue
       return true
     end
   end
-  
+
   def deleted_record_versioned?(id, highest_version)
     version_of_deleted_record = highest_version
-    rolle_deleted = Rolle::Version.find(:first, :conditions => "version = #{version_of_deleted_record} and rolle_id = #{id}")
+    rolle_deleted = Tools::LupKonfigKategorie::Version.find_by("version = #{version_of_deleted_record} and lup_konfig_kategorie_id = #{id}")
     return rolle_deleted != nil && rolle_deleted.deleted_in_original_table == true
   end
-  
+
   def restore_record(id)
-    Rolle.restore_deleted(id)
+    Tools::LupKonfigKategorie.restore_deleted(id)
   end
-  
+
   def restored_record_available_in_original_table?(id)
     begin
-      Rolle.find(id)
+      Tools::LupKonfigKategorie.find(id)
       return true
     rescue
       return false
     end
   end
-  
+
   def restored_record_versioned?(id, highest_version)
     version_of_restored_record = highest_version
-    rolle_restored = Rolle.find(id).versions.find(:first, :conditions => "version = #{version_of_restored_record}")
+    rolle_restored = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{version_of_restored_record}")
     return rolle_restored != nil && rolle_restored.deleted_in_original_table == false
   end
-  
+
   def save_record_without_changes(id)
-    versions_before_save = Rolle.find(id).versions.find(:all).size
-    rolle = Rolle.find(id)
+    versions_before_save = Tools::LupKonfigKategorie.find(id).versions.all.size
+    rolle = Tools::LupKonfigKategorie.find(id)
     rolle.update_attributes(:name=>rolle.name)
-    versions_after_save = Rolle.find(id).versions.find(:all).size
+    versions_after_save = Tools::LupKonfigKategorie.find(id).versions.all.size
     return versions_before_save == versions_after_save
   end
-  
+
 end
