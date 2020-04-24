@@ -20,7 +20,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-VERSION = '0.9.1'
+VERSION = '0.9.2'
 
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
@@ -550,10 +550,10 @@ module ActiveRecord #:nodoc:
               t.column record_restored_column, :integer, :default => nil
             end
 
-            self.versioned_columns.each do |col| 
+            self.versioned_columns.each do |col|
               self.connection.add_column versioned_table_name, col.name, col.type, 
                 :limit     => col.limit, 
-                :default   => col.cast_type.type_cast_from_database(col.default),  # convert strings to ruby types
+                :default   => col.default,
                 :scale     => col.scale,
                 :precision => col.precision
             end
@@ -561,7 +561,7 @@ module ActiveRecord #:nodoc:
             if type_col = self.columns_hash[inheritance_column]
               self.connection.add_column versioned_table_name, versioned_inheritance_column, type_col.type, 
                 :limit     => type_col.limit, 
-                :default   => type_col.cast_type.type_cast_from_database(type_col.default),  # convert strings to ruby types
+                :default   => type_col.default,
                 :scale     => type_col.scale,
                 :precision => type_col.precision
             end
