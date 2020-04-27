@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
   s.version           = '0.9.2'
-  s.date              = '2020-04-24'
+  s.date              = '2020-04-27'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
