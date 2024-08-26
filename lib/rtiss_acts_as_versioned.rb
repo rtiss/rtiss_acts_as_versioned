@@ -205,7 +205,7 @@ module ActiveRecord #:nodoc:
           end
 
           class_eval <<-CLASS_METHODS, __FILE__, __LINE__ + 1
-            has_many :versions, version_association_options do
+            has_many :versions, **version_association_options do
               # finds earliest version of this record
               def earliest
                 @earliest ||= order('#{version_column}').first
