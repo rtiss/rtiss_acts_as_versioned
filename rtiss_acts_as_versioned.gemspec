@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
-  s.version           = '0.9.3'
-  s.date              = '2024-08-26'
+  s.version           = '0.10.1'
+  s.date              = '2026-01-15'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
@@ -31,21 +31,19 @@ to use technoweenie's version (can be found also on github)"
   s.rdoc_options = ["--charset=UTF-8"]
   s.extra_rdoc_files = %w[README MIT-LICENSE CHANGELOG]
 
-  s.add_dependency 'activerecord', ">= 4.2.5"
-  s.add_development_dependency 'sqlite3-ruby', "~> 1.3.1"
-  s.add_development_dependency 'rails', "~> 4.2.5"
+  s.add_dependency 'activerecord', ">= 7.1.6"
+  s.add_development_dependency 'sqlite3', '~> 2.7'
+  s.add_development_dependency 'rails', "~> 7.1.6"
   s.add_development_dependency 'activerecord-testcase'
-  s.add_development_dependency 'activerecord-deprecated_finders' # todo alte, hash-basierte finders auf die neue AR Query-API migrieren
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE
   ## THE MANIFEST COMMENTS, they are used as delimiters by the task.
   # = MANIFEST =
   s.files = %w[
-    CHANGELOG
     Gemfile
     MIT-LICENSE
-    README
+    README.md
     RUNNING_UNIT_TESTS
     Rakefile
     init.rb

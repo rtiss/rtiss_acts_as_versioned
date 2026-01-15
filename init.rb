@@ -1,2 +1,3 @@
-# encoding: utf-8
-require 'rtiss_acts_as_versioned'
+Dir.glob(File.expand_path("lib/**/*.rb")).each do |file|
+  require file
+end

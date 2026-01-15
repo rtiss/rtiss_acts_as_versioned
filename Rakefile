@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'rake'
 require 'date'
+require 'rtiss_acts_as_versioned/version'
 
 #############################################################################
 #
@@ -13,8 +14,7 @@ def name
 end
 
 def version
-  line = File.read("lib//#{name}.rb")[/^\s*VERSION\s*=\s*.*/]
-  line.match(/.*VERSION\s*=\s*['"](.*)['"]/)[1]
+  ActiveRecord::Acts::Versioned::VERSION
 end
 
 def date
@@ -122,11 +122,11 @@ task :gemspec => :validate do
 end
 
 task :validate do
-  libfiles = Dir['lib/*'] - ["lib/#{name}.rb", "lib/#{name}"]
-  unless libfiles.empty?
-    puts "Directory `lib` should only contain a `/#{name}.rb` file and `/#{name}` dir."
-    exit!
-  end
+  # libfiles = Dir['lib/*'] - ["lib/#{name}.rb", "lib/#{name}"]
+  # unless libfiles.empty?
+  #   puts "Directory `lib` should only contain a `/#{name}.rb` file and `/#{name}` dir."
+  #   exit!
+  # end
   unless Dir['VERSION*'].empty?
     puts "A `VERSION` file at root level violates Gem best practices."
     exit!
