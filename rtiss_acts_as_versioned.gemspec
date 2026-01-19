@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
   s.version           = '0.10.1'
-  s.date              = '2026-01-15'
+  s.date              = '2026-01-19'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
@@ -29,7 +29,7 @@ to use technoweenie's version (can be found also on github)"
   s.homepage = 'http://github.com/rtiss/rtiss_acts_as_versioned'
   s.require_paths = ["lib"]
   s.rdoc_options = ["--charset=UTF-8"]
-  s.extra_rdoc_files = %w[README MIT-LICENSE CHANGELOG]
+  s.extra_rdoc_files = %w[README.md MIT-LICENSE]
 
   s.add_dependency 'activerecord', ">= 7.1.6"
   s.add_development_dependency 'sqlite3', '~> 2.7'
@@ -48,6 +48,8 @@ to use technoweenie's version (can be found also on github)"
     Rakefile
     init.rb
     lib/rtiss_acts_as_versioned.rb
+    lib/rtiss_acts_as_versioned/act_methods.rb
+    lib/rtiss_acts_as_versioned/version.rb
     rtiss_acts_as_versioned.gemspec
     test/abstract_unit.rb
     test/database.yml
