@@ -79,13 +79,16 @@ module ActiveRecord
 
         # Reverts a model to a given version and saves the model.
         # Takes either a version number or an instance of the versioned model
+        # A revert always creates a new version with the next version number.
+        # Returns false if the version is not found or the record can't be saved.
         def revert_to!(version)
-          if revert_to(version)
-            set_new_version
-            save_without_revision
-            save_version(true, false, @reverted_from)
-          else
-            false
+          return false unless revert_to(version)
+
+          self.class.transaction do
+            send("#{self.class.version_column}=", next_version)
+            saved = save_without_revision
+            save_version(true, false, @reverted_from) if saved
+            saved
           end
         end
 

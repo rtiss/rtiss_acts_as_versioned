@@ -80,7 +80,9 @@ In the original, `revert_to!(3)` set the record back to version number 3 and did
 new version. In the fork:
 
 * `revert_to!(n)` copies the data from version `n` and saves it as a **new version**
-  (`max + 1`), with `record_restored = n`;
+  (`max + 1`), with `record_restored = n`. This also applies when `:if` / `:if_changed` would
+  not create a version for a normal save. If the record can't be saved (validation), `revert_to!`
+  returns `false` and no version is written;
 * `restore` also always gives the record a new, higher version number;
 * the version column is **always separate from `lock_version`**. Do not set
   `:version_column => 'lock_version'`. Optimistic locking and versioning work side by side.
