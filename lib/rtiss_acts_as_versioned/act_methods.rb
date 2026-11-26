@@ -44,7 +44,7 @@ module ActiveRecord
           return if self.class.max_version_limit == 0
           excess_baggage = send(self.class.version_column).to_i - self.class.max_version_limit
           if excess_baggage > 0
-            self.class.versioned_class.where("#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id).delete_all
+            self.class.versioned_class.where(self.class.versioned_foreign_key => id, self.class.version_column => ..excess_baggage).delete_all
           end
         end
 
@@ -158,7 +158,7 @@ module ActiveRecord
         def find_newest_version
           return nil if self.id.nil?
 
-          self.class.versioned_class.where("#{self.class.versioned_foreign_key} = #{self.id}").order("#{self.version_column} DESC").first
+          self.class.versioned_class.where(self.class.versioned_foreign_key => id).order(self.class.version_column => :desc).first
         end
 
         def highest_version
@@ -168,7 +168,7 @@ module ActiveRecord
         def find_version(version)
           return nil if self.id.nil?
 
-          ret = self.class.versioned_class.where("#{self.class.versioned_foreign_key} = #{self.id} and #{self.class.version_column}=#{version}").first
+          ret = self.class.versioned_class.find_by(self.class.versioned_foreign_key => id, self.class.version_column => version)
           raise "find_version: version #{version} not found in database" unless ret
           ret
         end
@@ -197,12 +197,12 @@ module ActiveRecord
           end
 
           def restore_deleted(id)
-            version_record = versioned_class.where("#{versioned_foreign_key} = #{id}").order("#{self.version_column} DESC").first
+            version_record = versioned_class.where(versioned_foreign_key => id).order(version_column => :desc).first!
             version_record.restore
           end
 
           def restore_deleted_version(id, version)
-            version_record = versioned_class.where("#{versioned_foreign_key} = #{id} and #{self.version_column} = #{version}").first
+            version_record = versioned_class.find_by!(versioned_foreign_key => id, version_column => version)
             version_record.restore
           end
 

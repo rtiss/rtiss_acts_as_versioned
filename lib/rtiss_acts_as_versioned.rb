@@ -206,12 +206,12 @@ module ActiveRecord #:nodoc:
             has_many :versions, **version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= order('#{version_column}').first
+                @earliest ||= order(#{version_column.to_sym.inspect} => :asc).first
               end
 
               # find latest version of this record
               def latest
-                @latest ||= order('#{version_column} desc').first
+                @latest ||= order(#{version_column.to_sym.inspect} => :desc).first
               end
             end
             before_save  :set_new_version
@@ -233,16 +233,16 @@ module ActiveRecord #:nodoc:
             def self.reloadable? ; false ; end
             # find first version before the given version
             def self.before(version)
-              where("#{original_class.versioned_foreign_key} = ? and #{original_class.version_column} < ?",
-                    version.send(original_class.versioned_foreign_key), version.version)
-                .order("#{original_class.version_column} desc").first
+              where(original_class.versioned_foreign_key => version.send(original_class.versioned_foreign_key),
+                    original_class.version_column => ...version.send(original_class.version_column))
+                .order(original_class.version_column => :desc).first
             end
 
             # find first version after the given version.
             def self.after(version)
-              where("#{original_class.versioned_foreign_key} = ? and #{original_class.version_column} > ?",
-                    version.send(original_class.versioned_foreign_key), version.version)
-                .order(original_class.version_column).first
+              where(original_class.versioned_foreign_key => version.send(original_class.versioned_foreign_key))
+                .where(arel_table[original_class.version_column].gt(version.send(original_class.version_column)))
+                .order(original_class.version_column => :asc).first
             end
 
             def previous
