@@ -33,7 +33,7 @@ module ActiveRecord
             if rev.respond_to? :updated_at=
               rev.updated_at = Time.now
             end
-            rev.save
+            save_version_record!(rev)
           end
         end
 
@@ -49,7 +49,7 @@ module ActiveRecord
           if rev.respond_to? :updated_at=
             rev.updated_at = Time.now
           end
-          rev.save
+          save_version_record!(rev)
         end
 
         # Clears old revisions if a limit is set with the :limit option in <tt>acts_as_versioned</tt>.
@@ -194,6 +194,16 @@ module ActiveRecord
 
           @saving_version = new_record? || save_version?
           self.send("#{self.class.version_column}=", next_version) if new_record? || save_version?
+        end
+
+        # Saves the version record. Raises ActiveRecord::RecordNotSaved if it can't be saved (e.g. a validation on the
+        # versioned class fails), so the surrounding save/destroy of the original record is rolled back.
+        def save_version_record!(rev)
+          return true if rev.save
+
+          raise ActiveRecord::RecordNotSaved.new(
+            "Couldn't save version #{rev.send(self.class.version_column)} of #{self.class.name} id = #{id}: " \
+            "#{rev.errors.full_messages.join(', ')}", rev)
         end
 
         # Gets the next available version for the current record, or 1 for a new record

@@ -228,6 +228,10 @@ page.find_version(5).record_restored     # => true
 
 `restore` raises a `RuntimeError` if the original record still exists.
 
+If a version record can't be saved (e.g. a validation on the versioned class fails), `save`, `save!`,
+`destroy` and `restore` raise `ActiveRecord::RecordNotSaved` (with the version as `error.record`)
+and the change to the original record is rolled back.
+
 ### 7. Saving without a new version
 
 ```ruby
