@@ -274,7 +274,8 @@ module ActiveRecord #:nodoc:
               # executed.
               # Some ActiveRecord-Methods (for example #ActiveRecord::Base::AutosaveAssociation#save_collection_association) try to use ActiveRecord methods
               # with these Relations, and if these Relations have been converted to Arrays, these calls fail with an Exception
-              new_version_number = self.class.where(self.original_class.versioned_foreign_key => id).order('id desc').first.send(restored_record.version_column).to_i + 1
+              new_version_number = self.class.where(self.original_class.versioned_foreign_key => id)
+                                             .maximum(self.original_class.version_column).to_i + 1
               restored_record.send("#{restored_record.version_column}=", new_version_number)
               # one transaction, so the record is not restored if its version can't be saved
               self.class.transaction do

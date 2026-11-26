@@ -171,6 +171,19 @@ class TissTest < ActiveSupport::TestCase
     assert_equal 1, restored.find_version(4).record_restored_from_version
   end
 
+  # the new version number must come from the highest version, not from the version row with the highest id
+  def test_restore_uses_highest_version_not_highest_id
+    object = create_object('Stars')
+    edit_object(object.id, 'Planets')
+    object.destroy
+    # e.g. an old version imported later: highest id, low version number
+    GoodThing::Version.create!(good_thing_id: object.id, version: 0, name: 'Imported')
+
+    GoodThing.restore_deleted_version(object.id, 2)
+    assert_equal 4, GoodThing.find(object.id).version
+    assert_equal [0, 1, 2, 3, 4], GoodThing::Version.where(good_thing_id: object.id).order(:version).pluck(:version)
+  end
+
   def test_destroy_unsaved_record
     object = GoodThing.new(name: "Never saved")
     assert_nothing_raised { object.destroy }
