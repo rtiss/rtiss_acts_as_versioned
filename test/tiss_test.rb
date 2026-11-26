@@ -1,23 +1,28 @@
-# -*- encoding : utf-8 -*-
-require 'test_helper'
+require File.join(File.dirname(__FILE__), 'abstract_unit')
+require File.join(File.dirname(__FILE__), 'fixtures/good_thing')
 
-class Tools::ActsAsVersionedTest < ActiveSupport::TestCase
+# Tests for the features added by the TISS fork:
+# deleted_in_original_table, restore, record_restored, find_version, find_newest_version, highest_version.
+#
+# Based on test/models/tools/acts_as_versioned_test.rb in the TISS main project,
+# but using the gem's own test model GoodThing.
+class TissTest < ActiveSupport::TestCase
   def test_versioning
-    anzahl = Tools::LupKonfigKategorie.count
+    count = GoodThing.count
 
-    oid1 = create_object('java').id
-    oid2 = create_object('tuwien').id
-    oid3 = create_object('ruby').id
-    oid4 = create_object('rails').id
-    oid5 = create_object('times').id
+    oid1 = create_object('Sun').id
+    oid2 = create_object('Rain').id
+    oid3 = create_object('Coffee').id
+    oid4 = create_object('Music').id
+    oid5 = create_object('Sleep').id
 
-    assert_equal anzahl+5, Tools::LupKonfigKategorie.count
+    assert_equal count + 5, GoodThing.count
 
-    2.upto(5) {|index| edit_object(oid1, "java" + index.to_s)}
-    2.upto(7) {|index| edit_object(oid2, "tuwien" + index.to_s)}
-    2.upto(9) {|index| edit_object(oid3, "ruby" + index.to_s)}
-    2.upto(6) {|index| edit_object(oid4, "rails" + index.to_s)}
-    2.upto(3) {|index| edit_object_with_sleep(oid5, "times" + index.to_s)}
+    2.upto(5) { |index| edit_object(oid1, "Sun#{index}") }
+    2.upto(7) { |index| edit_object(oid2, "Rain#{index}") }
+    2.upto(9) { |index| edit_object(oid3, "Coffee#{index}") }
+    2.upto(6) { |index| edit_object(oid4, "Music#{index}") }
+    2.upto(3) { |index| edit_object_with_sleep(oid5, "Sleep#{index}") }
 
     assert versions_correct?(oid1, 5)
     assert versions_correct?(oid2, 7)
@@ -41,255 +46,216 @@ class Tools::ActsAsVersionedTest < ActiveSupport::TestCase
     assert save_record_without_changes(oid1)
   end
 
+  def test_all_versioned_attributes_are_copied
+    object = GoodThing.create!(name: 'Sun', why_good: 'Keeps us warm')
+    object.update!(why_good: 'Makes plants grow')
+
+    assert_equal 'Keeps us warm', object.find_version(1).why_good
+    assert_equal 'Makes plants grow', object.find_version(2).why_good
+    assert_equal 'Sun', object.find_version(2).name
+  end
+
   def test_deleted_in_original_table
-    record = create_object('test deleted_in_orginal_table')
+    record = create_object('Friends')
     version_record = record.versions.first
-    assert version_record != nil
+    assert_not_nil version_record
 
     assert !version_record.deleted_in_original_table
     record.destroy
 
     version_record = record.find_newest_version
-    assert version_record != nil
-    assert version_record.version == 2
+    assert_not_nil version_record
+    assert_equal 2, version_record.version
     assert version_record.deleted_in_original_table
   end
 
   def test_find_versions
-    o = create_object("karin")
-    v = o.versions
-    assert_equal 1, v.count
-    assert_equal v[0].name, "karin"
+    object = create_object("Books")
+    versions = object.versions
+    assert_equal 1, versions.count
+    assert_equal "Books", versions[0].name
 
-    edit_object(o.id, "zak")
-    v.reload
+    edit_object(object.id, "Libraries")
+    versions.reload
 
-    assert_equal 2, v.count
-    assert_equal v[0].name, "karin"
-    assert_equal v[1].name, "zak"
+    assert_equal 2, versions.count
+    assert_equal "Books", versions[0].name
+    assert_equal "Libraries", versions[1].name
 
-    v = o.versions.where("name = 'zak'")
-    assert_equal 1, v.count
-    assert_equal v[0].name, "zak"
+    versions = object.versions.where(name: 'Libraries')
+    assert_equal 1, versions.count
+    assert_equal "Libraries", versions[0].name
 
-#    v = o.find_versions(:all, :conditions => ["name = 'zak'"])
-#    assert_equal 1, v.count
-#    assert_equal v[0].name, "zak"
+    assert_equal "Books", object.versions.first.name
+    assert_equal "Libraries", object.versions.last.name
 
-    v = o.versions.first
-    assert_equal v.name, "karin"
+    versions = object.versions.order("name desc")
+    assert_equal 2, versions.count
+    assert_equal "Libraries", versions[0].name
+    assert_equal "Books", versions[1].name
 
-    v = o.versions.last
-    assert_equal v.name, "zak"
+    # mind the missing s
+    assert_equal "Books", object.find_version(1).name
+    assert_equal "Libraries", object.find_version(2).name
 
-    v = o.versions.order("name desc")
-    assert_equal 2, v.count
-    assert_equal v[0].name, "zak"
-    assert_equal v[1].name, "karin"
-# mind the missing s
+    assert_raises(RuntimeError) { object.find_version(3) }
 
-    v = o.find_version(1)
-    assert_equal v.name, "karin"
-
-    v = o.find_version(2)
-    assert_equal v.name, "zak"
-
-    assert_raises(RuntimeError) { o.find_version(3) }
-
-    v = o.find_newest_version
-    assert_equal v.name, "zak"
+    assert_equal "Libraries", object.find_newest_version.name
   end
 
   def test_restore
-    o = create_object("lebt")
-    oid = o.id
-    v = o.find_version(1)
-    assert v!=nil
+    object = create_object("Trees")
+    version = object.find_version(1)
 
-    assert_raises(RuntimeError) { v.restore }
-    assert !v.deleted_in_original_table
+    assert_raises(RuntimeError) { version.restore }
+    assert !version.deleted_in_original_table
 
-    o.destroy
-    v = o.find_newest_version
-    assert v.deleted_in_original_table
+    object.destroy
+    version = object.find_newest_version
+    assert version.deleted_in_original_table
 
-    v.restore
-    v = o.find_newest_version
-    assert !v.deleted_in_original_table
+    version.restore
+    version = object.find_newest_version
+    assert !version.deleted_in_original_table
+    assert version.record_restored?
+    assert_equal 2, version.record_restored_from_version
   end
 
   def test_original_record_exists
-    o = create_object("lebt")
-    oid = o.id
-    v = o.find_version(1)
-    assert v!=nil
-    assert v.original_record_exists?
+    object = create_object("Bicycles")
+    version = object.find_version(1)
+    assert version.original_record_exists?
 
-    o.destroy
-    assert !v.original_record_exists?
+    object.destroy
+    assert !version.original_record_exists?
 
-    v.restore
-    assert v.original_record_exists?
+    version.restore
+    assert version.original_record_exists?
   end
 
   def test_restore_deleted
-    o = create_object("lebt")
-    oid = o.id
-    v = o.find_version(1)
-    assert v!=nil
+    object = create_object("Holidays")
+    oid = object.id
+    version = object.find_version(1)
 
     assert_raises(RuntimeError) { restore_record(oid) }
-    assert !v.deleted_in_original_table
+    assert !version.deleted_in_original_table
 
-    o.destroy
-    v = o.find_version(2)
-    assert v!=nil
-    assert v.deleted_in_original_table
+    object.destroy
+    version = object.find_version(2)
+    assert version.deleted_in_original_table
 
     restore_record(oid)
-    v = o.find_version(3)
-    assert v!=nil
-    assert !v.deleted_in_original_table
+    version = object.find_version(3)
+    assert !version.deleted_in_original_table
   end
 
   def test_restore_deleted_version
-    o = create_object("lebt")
-    oid = o.id
-    v = o.find_version(1)
-    assert v!=nil
+    object = GoodThing.create!(name: 'Sun', why_good: 'Keeps us warm')
+    oid = object.id
 
-    edit_object(oid, "nicht")
-    x = Tools::LupKonfigKategorie.find(oid)
-    assert x.name == "nicht"
+    edit_object(oid, "Moon")
+    assert_equal "Moon", GoodThing.find(oid).name
 
-    v = o.find_version(2)
-    assert v!=nil
-    o.destroy
+    assert_not_nil object.find_version(2)
+    object.destroy
 
-    v = o.find_version(3)
-    assert v!=nil
-    assert v.deleted_in_original_table
+    version = object.find_version(3)
+    assert version.deleted_in_original_table
 
-    Tools::LupKonfigKategorie.restore_deleted_version(oid, 1)
-    x = Tools::LupKonfigKategorie.find(oid)
-    assert x.name == "lebt"
-  end
-
-  def test_find_and_deleted_in_original_table
-    mitarbeiter = Personal::Mitarbeiter.create(:person_id=>6, :eintrittsdatum=>'1990-01-01')
-    rel_person_orgeinheit = Organisation::RelPersonOrgeinheit.create(:anstellbar_id=>mitarbeiter.id, :anstellbar_type=>'Personal::Mitarbeiter', :orgeinheit_id=>1, :person_id=>5, :lup_person_funktion_id=>1, :org_interne_id=>1)
-
-    assert rel_person_orgeinheit.save
-
-    rel_person_orgeinheit.destroy
-    assert rel_person_orgeinheit.alte_adressbuchdaten_wiederherstellen
-
-#    assert_raises NoMethodError do rel_person_orgeinheit.alte_adressbuchdaten_wiederherstellen end
+    GoodThing.restore_deleted_version(oid, 1)
+    restored = GoodThing.find(oid)
+    assert_equal "Sun", restored.name
+    assert_equal "Keeps us warm", restored.why_good
+    assert_equal 4, restored.version
+    assert_equal 1, restored.find_version(4).record_restored_from_version
   end
 
   def test_destroy_unsaved_record
-    o = Tools::LupKonfigKategorie.new(:name => "Nicht Speichern")
-    assert_nothing_raised do o.destroy end
-    assert_equal o.highest_version, -1
+    object = GoodThing.new(name: "Never saved")
+    assert_nothing_raised { object.destroy }
+    assert_equal(-1, object.highest_version)
   end
 
   private
-  def create_object(bezeichnung)
-    puts "create_object: #{bezeichnung}"
-    o = Tools::LupKonfigKategorie.new(:name => bezeichnung)
-    o.save!
-    return o
+
+  def create_object(name)
+    GoodThing.create!(name: name, why_good: "#{name} is good")
   end
 
-  def edit_object(id, bezeichnung)
-    puts "edit_object: #{id}: #{bezeichnung}"
-    Tools::LupKonfigKategorie.find(id).update_attributes!(:name=>bezeichnung)
+  def edit_object(id, name)
+    GoodThing.find(id).update!(name: name)
   end
 
-  def edit_object_with_sleep(id, bezeichnung)
+  def edit_object_with_sleep(id, name)
     sleep(2)
-    Tools::LupKonfigKategorie.find(id).update_attributes!(:name=>bezeichnung)
+    GoodThing.find(id).update!(name: name)
   end
 
   def versions_correct?(id, highest_version)
-    result = Tools::LupKonfigKategorie.find(id).versions.all.size == highest_version
+    versions = GoodThing.find(id).versions
     1.upto(highest_version) do |current_version|
-      current_version_record = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version}")
-      result = false if current_version_record.nil? || current_version_record.deleted_in_original_table == true
+      current_version_record = versions.find_by(version: current_version)
+      return false if current_version_record.nil? || current_version_record.deleted_in_original_table == true
     end
-    return result
+    versions.size == highest_version
   end
 
+  # updated_at must never go backwards from one version to the next
   def timestamps?(id)
-    result = true;
-    highest_version = Tools::LupKonfigKategorie.find(id).versions.all.size
-    highest_version.downto(1) do |current_version|
-      if current_version >= 2
-        rolle_current_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version}")
-        rolle_predecessor_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version-1}")
-        toleranz = rolle_current_version.created_at - rolle_predecessor_version.updated_at
-        result = false if toleranz > 1.0
-      end
+    versions = GoodThing.find(id).versions
+    versions.size.downto(2) do |version|
+      current_version = versions.find_by(version: version)
+      predecessor_version = versions.find_by(version: version - 1)
+      return false if current_version.updated_at < predecessor_version.updated_at
     end
-    return result
+    true
   end
 
+  # with a pause between the edits: created_at is copied from the original record and stays the same,
+  # updated_at must differ between versions
   def strong_timestamps?(id)
-    result = true;
-    highest_version = Tools::LupKonfigKategorie.find(id).versions.all.size
-    highest_version.downto(2) do |current_version|
-      rolle_current_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version}")
-      rolle_predecessor_version = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{current_version-1}")
-      result = false unless rolle_current_version.created_at = rolle_predecessor_version.updated_at
-      result = false unless rolle_current_version.created_at >= rolle_predecessor_version.created_at
+    versions = GoodThing.find(id).versions
+    versions.size.downto(2) do |version|
+      current_version = versions.find_by(version: version)
+      predecessor_version = versions.find_by(version: version - 1)
+      return false if current_version.updated_at == predecessor_version.updated_at ||
+                      current_version.created_at != predecessor_version.created_at
     end
-    return result
+    true
   end
 
   def destroy_record(id)
-    Tools::LupKonfigKategorie.destroy(id)
+    GoodThing.destroy(id)
   end
 
   def record_unavailable_in_original_table?(id)
-    begin
-      Tools::LupKonfigKategorie.find(id)
-      return false
-    rescue
-      return true
-    end
+    !GoodThing.exists?(id: id)
   end
 
   def deleted_record_versioned?(id, highest_version)
-    version_of_deleted_record = highest_version
-    rolle_deleted = Tools::LupKonfigKategorie::Version.find_by("version = #{version_of_deleted_record} and lup_konfig_kategorie_id = #{id}")
-    return rolle_deleted != nil && rolle_deleted.deleted_in_original_table == true
+    deleted = GoodThing::Version.find_by(version: highest_version, good_thing_id: id)
+    deleted != nil && deleted.deleted_in_original_table == true
   end
 
   def restore_record(id)
-    Tools::LupKonfigKategorie.restore_deleted(id)
+    GoodThing.restore_deleted(id)
   end
 
   def restored_record_available_in_original_table?(id)
-    begin
-      Tools::LupKonfigKategorie.find(id)
-      return true
-    rescue
-      return false
-    end
+    GoodThing.exists?(id: id)
   end
 
-  def restored_record_versioned?(id, highest_version)
-    version_of_restored_record = highest_version
-    rolle_restored = Tools::LupKonfigKategorie.find(id).versions.find_by("version = #{version_of_restored_record}")
-    return rolle_restored != nil && rolle_restored.deleted_in_original_table == false
+  def restored_record_versioned?(id, version_of_restored_record)
+    restored = GoodThing.find(id).versions.find_by(version: version_of_restored_record)
+    restored != nil && !restored.deleted_in_original_table
   end
 
   def save_record_without_changes(id)
-    versions_before_save = Tools::LupKonfigKategorie.find(id).versions.all.size
-    rolle = Tools::LupKonfigKategorie.find(id)
-    rolle.update_attributes(:name=>rolle.name)
-    versions_after_save = Tools::LupKonfigKategorie.find(id).versions.all.size
-    return versions_before_save == versions_after_save
+    versions_before_save = GoodThing.find(id).versions.count
+    record = GoodThing.find(id)
+    record.update(name: record.name)
+    versions_after_save = GoodThing.find(id).versions.count
+    versions_before_save == versions_after_save
   end
-
 end

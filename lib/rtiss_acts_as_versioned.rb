@@ -198,6 +198,7 @@ module ActiveRecord #:nodoc:
 
           if block_given?
             extension_module_name = "#{versioned_class_name}Extension"
+            const_set(extension_module_name, Module.new(&extension)) unless const_defined?(extension_module_name, false)
             options[:extend] = self.const_get(extension_module_name)
           end
 
@@ -232,16 +233,16 @@ module ActiveRecord #:nodoc:
             def self.reloadable? ; false ; end
             # find first version before the given version
             def self.before(version)
-              where("#{original_class.versioned_foreign_key} = ? and #{self.version_column} < ?",
+              where("#{original_class.versioned_foreign_key} = ? and #{original_class.version_column} < ?",
                     version.send(original_class.versioned_foreign_key), version.version)
-                .order("#{self.version_column} desc").first
+                .order("#{original_class.version_column} desc").first
             end
 
             # find first version after the given version.
             def self.after(version)
-              where("#{original_class.versioned_foreign_key} = ? and #{self.version_column} > ?",
+              where("#{original_class.versioned_foreign_key} = ? and #{original_class.version_column} > ?",
                     version.send(original_class.versioned_foreign_key), version.version)
-                .order(self.version_column).first
+                .order(original_class.version_column).first
             end
 
             def previous

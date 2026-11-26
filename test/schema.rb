@@ -90,67 +90,23 @@ ActiveRecord::Schema.define(:version => 1) do
   
   add_index :landmark_h, [:landmark_id, :version], :unique => true
 
-  create_table "rolle", :force => true do |t|
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "version",                             :precision => 38, :scale => 0, :default => 1
-    t.integer  "mutator_id",                          :precision => 38, :scale => 0, :default => 0
-    t.string   "name",                :limit => 50,                                                    :null => false
-    t.string   "beschreibung",        :limit => 250
-    t.integer  "parent_id",                           :precision => 38, :scale => 0
-    t.string   "beschreibung_intern", :limit => 4000
-    t.string   "geltungsbereich",     :limit => 1000
-    t.string   "vergaberichtlinien",  :limit => 4000
-    t.boolean  "ist_delegierbar",                     :precision => 1,  :scale => 0, :default => true
+  # Test model for the TISS fork features (deleted_in_original_table, restore, ...), see test/tiss_test.rb
+  create_table :good_things, :force => true do |t|
+    t.column :name, :string, :limit => 50, :null => false
+    t.column :why_good, :string, :limit => 250
+    t.column :version, :integer, :default => 1
+    t.timestamps
   end
 
-  create_table "rolle_h", :force => true do |t|
-    t.integer  "rolle_id",                                  :precision => 38, :scale => 0
-    t.integer  "version",                                   :precision => 38, :scale => 0
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "mutator_id",                                :precision => 38, :scale => 0
-    t.string   "name",                      :limit => 50
-    t.string   "beschreibung",              :limit => 250
-    t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
-    t.integer  "record_restored",                           :precision => 38,  :scale => 0, :default => nil
-    t.integer  "parent_id",                                 :precision => 38, :scale => 0
-    t.string   "beschreibung_intern",       :limit => 4000
-    t.string   "geltungsbereich",           :limit => 1000
-    t.string   "vergaberichtlinien",        :limit => 4000
-    t.boolean  "ist_delegierbar",                           :precision => 1,  :scale => 0, :default => true
+  create_table :good_things_h, :force => true do |t|
+    t.column :good_thing_id, :integer
+    t.column :version, :integer
+    t.column :name, :string, :limit => 50
+    t.column :why_good, :string, :limit => 250
+    t.timestamps
+    t.column :deleted_in_original_table, :boolean
+    t.column :record_restored, :integer, :default => nil
   end
 
-  create_table "locked_rolle", :force => true do |t|
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "version",                             :precision => 38, :scale => 0, :default => 1
-    t.integer  "lock_version",                             :precision => 38, :scale => 0, :default => 0
-    t.integer  "mutator_id",                          :precision => 38, :scale => 0, :default => 0
-    t.string   "name",                :limit => 50,                                                    :null => false
-    t.string   "beschreibung",        :limit => 250
-    t.integer  "parent_id",                           :precision => 38, :scale => 0
-    t.string   "beschreibung_intern", :limit => 4000
-    t.string   "geltungsbereich",     :limit => 1000
-    t.string   "vergaberichtlinien",  :limit => 4000
-    t.boolean  "ist_delegierbar",                     :precision => 1,  :scale => 0, :default => true
-  end
-
-  create_table "locked_rolle_h", :force => true do |t|
-    t.integer  "locked_rolle_id",                                  :precision => 38, :scale => 0
-    t.integer  "version",                                   :precision => 38, :scale => 0
-    t.integer  "lock_version",                                   :precision => 38, :scale => 0, :default => 0
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "mutator_id",                                :precision => 38, :scale => 0
-    t.string   "name",                      :limit => 50
-    t.string   "beschreibung",              :limit => 250
-    t.boolean  "deleted_in_original_table",                 :precision => 1,  :scale => 0
-    t.integer  "record_restored",                           :precision => 38,  :scale => 0, :default => nil
-    t.integer  "parent_id",                                 :precision => 38, :scale => 0
-    t.string   "beschreibung_intern",       :limit => 4000
-    t.string   "geltungsbereich",           :limit => 1000
-    t.string   "vergaberichtlinien",        :limit => 4000
-    t.boolean  "ist_delegierbar",                           :precision => 1,  :scale => 0, :default => true
-  end
+  add_index :good_things_h, [:good_thing_id, :version], :unique => true
 end
