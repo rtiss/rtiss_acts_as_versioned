@@ -240,10 +240,11 @@ Page.without_revision do
 end
 ```
 
-> ⚠️ `without_revision` swaps the callback methods **on the class** for the length of the block.
-> This is not thread-safe. Other threads that save the same model during the block will not
-> get versions either. `without_locking` likewise changes `ActiveRecord::Base.lock_optimistically`
-> globally.
+`without_revision` disables versioning for the class and its subclasses. `without_locking` disables
+optimistic locking for all models. Both only affect the current thread (or fiber, depending on
+`config.active_support.isolation_level`) and may be nested. `Page.without_revision?` tells you
+whether you are inside such a block. `ActiveRecord::Base.lock_optimistically` itself is not
+changed by `without_locking`.
 
 ### 8. Options
 

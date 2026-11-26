@@ -2,12 +2,26 @@ module ActiveRecord
   module Acts
     module Versioned
       module ActMethods
+        WITHOUT_REVISION_KEY = :rtiss_acts_as_versioned_without_revision
+        WITHOUT_LOCKING_KEY = :rtiss_acts_as_versioned_without_locking
+
+        # Prepended to ActiveRecord::Base.singleton_class: disables optimistic locking inside without_locking blocks
+        module LockingOverride
+          def locking_enabled?
+            return false if ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY]
+
+            super
+          end
+        end
+
         def self.included(base) # :nodoc:
           base.extend ClassMethods
         end
 
         # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
         def save_version(save_this=false, deleted_flag=false, restored_from_version=nil)
+          return if self.class.without_revision?
+
           if @saving_version || save_this
             @saving_version = nil
             rev = self.class.versioned_class.new
@@ -117,6 +131,8 @@ module ActiveRecord
 
         # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
         def save_version?
+          return false if self.class.without_revision?
+
           version_condition_met? && altered?
         end
 
@@ -153,8 +169,6 @@ module ActiveRecord
           self.class.without_locking(&block)
         end
 
-        def empty_callback() end #:nodoc:
-
         def find_newest_version
           return nil if self.id.nil?
 
@@ -176,6 +190,8 @@ module ActiveRecord
         protected
         # sets the new version before saving
         def set_new_version
+          return if self.class.without_revision?
+
           @saving_version = new_record? || save_version?
           self.send("#{self.class.version_column}=", next_version) if new_record? || save_version?
         end
@@ -206,42 +222,40 @@ module ActiveRecord
             version_record.restore
           end
 
-          # Executes the block with the versioning callbacks disabled.
+          # Executes the block with versioning disabled for this class (and its subclasses).
+          # Only affects the current thread (or fiber, see config.active_support.isolation_level); may be nested.
           #
           #   Foo.without_revision do
           #     @foo.save
           #   end
           #
-          def without_revision(&block)
-            class_eval do
-              CALLBACKS.each do |attr_name|
-                alias_method "orig_#{attr_name}".to_sym, attr_name
-                alias_method attr_name, :empty_callback
-              end
-            end
-            block.call
+          def without_revision
+            previous = ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY]
+            ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY] = [*previous, self]
+            yield
           ensure
-            class_eval do
-              CALLBACKS.each do |attr_name|
-                alias_method attr_name, "orig_#{attr_name}".to_sym
-              end
-            end
+            ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY] = previous
           end
 
-          # Turns off optimistic locking for the duration of the block
+          # True while inside a without_revision block for this class (or a superclass) in the current thread.
+          def without_revision?
+            classes = ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY]
+            !classes.nil? && classes.any? { |klass| self <= klass }
+          end
+
+          # Turns off optimistic locking for all models for the duration of the block.
+          # Only affects the current thread (or fiber, see config.active_support.isolation_level); may be nested.
           #
           #   Foo.without_locking do
           #     @foo.save
           #   end
           #
-          def without_locking(&block)
-            current = ActiveRecord::Base.lock_optimistically
-            ActiveRecord::Base.lock_optimistically = false if current
-            begin
-              block.call
-            ensure
-              ActiveRecord::Base.lock_optimistically = true if current
-            end
+          def without_locking
+            previous = ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY]
+            ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY] = true
+            yield
+          ensure
+            ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY] = previous
           end
 
           # Rake migration task to create the versioned table using options passed to acts_as_versioned

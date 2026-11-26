@@ -70,7 +70,6 @@ module ActiveRecord #:nodoc:
     #
     # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
     module Versioned
-      CALLBACKS = [:set_new_version, :save_version, :save_version?]
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
@@ -313,3 +312,4 @@ module ActiveRecord #:nodoc:
 end
 
 ActiveRecord::Base.send :include, ActiveRecord::Acts::Versioned
+ActiveRecord::Base.singleton_class.prepend ActiveRecord::Acts::Versioned::ActMethods::LockingOverride
