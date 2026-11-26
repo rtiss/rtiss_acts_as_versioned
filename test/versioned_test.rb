@@ -22,7 +22,7 @@ class VersionedTest < ActiveSupport::TestCase
     p.save_without_revision
 
     p.without_revision do
-      p.update_attributes :title => 'changed'
+      p.update :title => 'changed'
     end
 
     assert_equal old_versions, p.versions.count
@@ -156,11 +156,11 @@ class VersionedTest < ActiveSupport::TestCase
     assert_equal 1, p.version # version does not increment
     assert_equal 1, p.versions.count
 
-    p.update_attributes(:title => 'new title')
+    p.update(:title => 'new title')
     assert_equal 1, p.version # version does not increment
     assert_equal 1, p.versions.count
 
-    p.update_attributes(:title => 'a title')
+    p.update(:title => 'a title')
     assert_equal 2, p.version
     assert_equal 2, p.versions.count
 
@@ -177,11 +177,11 @@ class VersionedTest < ActiveSupport::TestCase
     assert_equal 1, p.version # version does not increment
     assert_equal 1, p.versions.count
 
-    p.update_attributes(:title => 'a title')
+    p.update(:title => 'a title')
     assert_equal 1, p.version # version does not increment
     assert_equal 1, p.versions.count
 
-    p.update_attributes(:title => 'b title')
+    p.update(:title => 'b title')
     assert_equal 2, p.version
     assert_equal 2, p.versions.count
 
@@ -203,14 +203,14 @@ class VersionedTest < ActiveSupport::TestCase
 
   def test_version_max_limit
     p = LockedPage.create! :title => "title"
-    p.update_attributes(:title => "title1")
-    p.update_attributes(:title => "title2")
+    p.update(:title => "title1")
+    p.update(:title => "title2")
     5.times do |i|
       p.title = "title#{i}"
       p.save
       assert_equal "title#{i}", p.title
       assert_equal (i+4), p.version
-      assert p.versions(true).size <= 2, "locked version can only store 2 versions"
+      assert p.versions.reload.size <= 2, "locked version can only store 2 versions"
     end
   end
 
@@ -223,29 +223,29 @@ class VersionedTest < ActiveSupport::TestCase
   def test_track_altered_attributes
     p = LockedPage.create! :title => "title"
     assert_equal 1, p.version
-    assert_equal 1, p.versions(true).size
+    assert_equal 1, p.versions.reload.size
 
     p.body = 'whoa'
     assert !p.save_version?
     p.save
     assert_equal 1, p.version # no increment, because we're not using lock_version column
-    assert_equal 1, p.versions(true).size
+    assert_equal 1, p.versions.reload.size
 
     p.title = 'updated title'
     assert p.save_version?
     p.save
     assert_equal 2, p.version
-    assert_equal 2, p.versions(true).size
+    assert_equal 2, p.versions.reload.size
 
     p.title = 'updated title!'
     assert p.save_version?
     p.save
     assert_equal 3, p.version
-    assert_equal 2, p.versions(true).size # version 1 deleted
+    assert_equal 2, p.versions.reload.size # version 1 deleted
   end
 
   def test_find_versions
-    assert_equal 1, locked_pages(:welcome).versions.find(:all, :conditions => ['title LIKE ?', '%weblog%']).size
+    assert_equal 1, locked_pages(:welcome).versions.where('title LIKE ?', '%weblog%').size
   end
 
   def test_find_version
@@ -276,7 +276,7 @@ class VersionedTest < ActiveSupport::TestCase
   def test_association_options
     association = Page.reflect_on_association(:versions)
     options = association.options
-    assert_equal nil, options[:dependent]
+    assert_nil options[:dependent]
 
     association = Widget.reflect_on_association(:versions)
     options = association.options

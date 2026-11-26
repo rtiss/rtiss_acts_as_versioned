@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
-  s.version           = '0.10.2'
-  s.date              = '2026-01-20'
+  s.version           = '0.10.3'
+  s.date              = '2026-11-26'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
@@ -50,21 +50,21 @@ to use technoweenie's version (can be found also on github)"
     lib/rtiss_acts_as_versioned.rb
     lib/rtiss_acts_as_versioned/act_methods.rb
     lib/rtiss_acts_as_versioned/version.rb
+    mise.toml.example
     rtiss_acts_as_versioned.gemspec
     test/abstract_unit.rb
     test/database.yml
     test/fixtures/authors.yml
+    test/fixtures/good_thing.rb
     test/fixtures/landmark.rb
     test/fixtures/landmark_h.yml
     test/fixtures/landmarks.yml
     test/fixtures/locked_pages.yml
     test/fixtures/locked_pages_revisions.yml
-    test/fixtures/locked_rolle.rb
     test/fixtures/migrations/2_add_versioned_tables.rb
     test/fixtures/page.rb
     test/fixtures/pages.yml
     test/fixtures/pages_h.yml
-    test/fixtures/rolle.rb
     test/fixtures/widget.rb
     test/migration_test.rb
     test/schema.rb

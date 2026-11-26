@@ -275,9 +275,16 @@ Columns that are never versioned: primary key, `type` (STI), the version column,
 
 ## Tests
 
-The test suite comes from the original gem and has only partly been updated:
-`test/tiss_test.rb` uses models from the TISS main project, and `test/abstract_unit.rb`
-still loads `active_record/deprecated_finders`. As of 0.10.2, `rake test` does not run on its own.
+```sh
+bundle exec rake test
+```
+
+The tests run against SQLite (`test/database.yml`).
+
+* `test/versioned_test.rb` – the original acts_as_versioned tests, adapted to the fork's behaviour
+* `test/tiss_test.rb` – the fork features (destroy, restore, `record_restored`, `find_version`, …),
+  using the test model `GoodThing` (`name`, `why_good`), e.g. `GoodThing.create!(name: 'Sun', why_good: 'Keeps us warm')`
+* `test/migration_test.rb` – `create_versioned_table`
 
 ## Release
 

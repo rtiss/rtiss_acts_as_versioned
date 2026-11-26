@@ -44,7 +44,7 @@ module ActiveRecord
           return if self.class.max_version_limit == 0
           excess_baggage = send(self.class.version_column).to_i - self.class.max_version_limit
           if excess_baggage > 0
-            self.class.versioned_class.delete_all ["#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id]
+            self.class.versioned_class.where("#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id).delete_all
           end
         end
 
