@@ -61,6 +61,14 @@ In this fork:
 
 Note: `delete` / `delete_all` skip callbacks, so they do **not** create a deletion version.
 
+The deletion version is built from the **in-memory state** of the record when `after_destroy` runs.
+Attributes you assign in a `before_destroy` callback are therefore stored in the deletion version,
+without an extra `UPDATE` of the record. Use this e.g. to record who deleted it:
+
+```ruby
+before_destroy { self.changed_by = Current.user_id }   # ends up in the deletion version only
+```
+
 ### 3. Restoring destroyed records
 
 New methods let you bring a destroyed record back from its history:
@@ -72,6 +80,16 @@ New methods let you bring a destroyed record back from its history:
 
 A restore always creates a **new** version. That version stores, in the `record_restored`
 column, which version the record was restored from.
+
+The restored record is created with all attributes copied from the version. While `restore` saves
+it (and its new version), `restoring?` returns `true`, so your callbacks can tell a restore apart
+from a normal create, e.g. to record the restoring user instead of the copied value:
+
+```ruby
+before_create { self.changed_by = Current.user_id if changed_by.nil? || restoring? }
+```
+
+Outside of `restore`, `restoring?` is `false`, also after a failed restore.
 
 ### 4. `record_restored` column
 
@@ -319,6 +337,8 @@ The tests run against SQLite (`test/database.yml`).
 * `test/versioned_test.rb` – the original acts_as_versioned tests, adapted to the fork's behaviour
 * `test/tiss_test.rb` – the fork features (destroy, restore, `record_restored`, `find_version`, …),
   using the test model `GoodThing` (`name`, `why_good`), e.g. `GoodThing.create!(name: 'Sun', why_good: 'Keeps us warm')`
+* `test/callbacks_test.rb` – contracts for application callbacks: `before_destroy` attributes in the
+  deletion version, `restoring?` during `restore`, using the test model `AuditedThing` (`name`, `changed_by`)
 * `test/migration_test.rb` – `create_versioned_table`
 
 ## Release

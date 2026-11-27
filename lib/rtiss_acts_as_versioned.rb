@@ -300,10 +300,13 @@ module ActiveRecord #:nodoc:
               restored_record.send("#{restored_record.version_column}=", new_version_number)
               # one transaction, so the record is not restored if its version can't be saved
               self.class.transaction do
-                unless restored_record.save_without_revision(perform_validation)
-                  raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
+                # restoring? is true for the callbacks of the restored record while it and its version are saved
+                restored_record.while_restoring do
+                  unless restored_record.save_without_revision(perform_validation)
+                    raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
+                  end
+                  restored_record.save_version(true, false, self.send(self.original_class.version_column))
                 end
-                restored_record.save_version(true, false, self.send(self.original_class.version_column))
               end
             end
 

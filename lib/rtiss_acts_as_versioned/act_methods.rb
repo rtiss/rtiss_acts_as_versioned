@@ -37,6 +37,9 @@ module ActiveRecord
           end
         end
 
+        # Writes the deletion version (after_destroy callback).
+        # The version is built from the in-memory state of the record at this point, so attributes assigned in a
+        # before_destroy callback (e.g. who deleted the record) are stored in the deletion version.
         def set_deleted_flag
           return if self.id.nil?
 
@@ -109,6 +112,22 @@ module ActiveRecord
               save!
             end
           end
+        end
+
+        # True while Version#restore saves this record, false otherwise.
+        # Lets the application tell a restore apart from a normal create in its own callbacks, e.g. to record
+        # the restoring user instead of the value copied from the version.
+        def restoring?
+          !!@restoring
+        end
+
+        # Marks the record as being restored for the duration of the block. Used by Version#restore.
+        def while_restoring # :nodoc:
+          previous = @restoring
+          @restoring = true
+          yield
+        ensure
+          @restoring = previous
         end
 
         def altered?
