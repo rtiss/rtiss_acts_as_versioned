@@ -1,7 +1,14 @@
 # rtiss_acts_as_versioned
 
-Simple versioning for ActiveRecord models. Every change to a record is saved as a
-copy in a separate history table.
+Simple versioning for ActiveRecord models. Every change to a record saves a **full copy of the
+record** in a separate history table (`Model::Version`). The data is stored many times over, which
+has advantages and disadvantages:
+
+* **Pro – traceability:** you can see exactly what a record looked like at any point in time.
+* **Pro – undo:** any earlier version can be restored. Deletions are versioned too, so destroyed
+  records can be restored (with the same `id`).
+* **Con – space:** each version is a complete row, so the history table grows with every change.
+  Use `:limit`, `:if` / `:if_changed` or `:non_versioned_columns` to keep it smaller.
 
 This is a fork of [technoweenie/acts_as_versioned](https://github.com/technoweenie/acts_as_versioned)
 (Rick Olson, 2005), used by the TISS-Team at [TU Wien](https://www.tuwien.at/). It adds a few changes on top
@@ -249,6 +256,7 @@ Page::Version.currently_deleted.find_each(&:restore)       # restore all of them
 after a restore, so it also returns restored records, and records deleted more than once several times.
 
 `restore` raises a `RuntimeError` if the original record still exists.
+`restore_deleted` / `restore_deleted_version` raise `ActiveRecord::RecordNotFound` if there is no matching version.
 
 If a version record can't be saved (e.g. a validation on the versioned class fails), `save`, `save!`,
 `destroy` and `restore` raise `ActiveRecord::RecordNotSaved` (with the version as `error.record`)
