@@ -109,4 +109,25 @@ ActiveRecord::Schema.define(:version => 1) do
   end
 
   add_index :good_things_h, [:good_thing_id, :version], :unique => true
+
+  # Test model for application callbacks on destroy and restore (changed_by = who changed the record),
+  # see test/callbacks_test.rb
+  create_table :audited_things, :force => true do |t|
+    t.column :name, :string, :limit => 50, :null => false
+    t.column :changed_by, :integer
+    t.column :version, :integer, :default => 1
+    t.timestamps
+  end
+
+  create_table :audited_things_h, :force => true do |t|
+    t.column :audited_thing_id, :integer
+    t.column :version, :integer
+    t.column :name, :string, :limit => 50
+    t.column :changed_by, :integer
+    t.timestamps
+    t.column :deleted_in_original_table, :boolean
+    t.column :record_restored, :integer, :default => nil
+  end
+
+  add_index :audited_things_h, [:audited_thing_id, :version], :unique => true
 end

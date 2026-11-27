@@ -2,12 +2,26 @@ module ActiveRecord
   module Acts
     module Versioned
       module ActMethods
+        WITHOUT_REVISION_KEY = :rtiss_acts_as_versioned_without_revision
+        WITHOUT_LOCKING_KEY = :rtiss_acts_as_versioned_without_locking
+
+        # Prepended to ActiveRecord::Base.singleton_class: disables optimistic locking inside without_locking blocks
+        module LockingOverride
+          def locking_enabled?
+            return false if ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY]
+
+            super
+          end
+        end
+
         def self.included(base) # :nodoc:
           base.extend ClassMethods
         end
 
         # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
         def save_version(save_this=false, deleted_flag=false, restored_from_version=nil)
+          return if self.class.without_revision?
+
           if @saving_version || save_this
             @saving_version = nil
             rev = self.class.versioned_class.new
@@ -19,10 +33,13 @@ module ActiveRecord
             if rev.respond_to? :updated_at=
               rev.updated_at = Time.now
             end
-            rev.save
+            save_version_record!(rev)
           end
         end
 
+        # Writes the deletion version (after_destroy callback).
+        # The version is built from the in-memory state of the record at this point, so attributes assigned in a
+        # before_destroy callback (e.g. who deleted the record) are stored in the deletion version.
         def set_deleted_flag
           return if self.id.nil?
 
@@ -35,7 +52,7 @@ module ActiveRecord
           if rev.respond_to? :updated_at=
             rev.updated_at = Time.now
           end
-          rev.save
+          save_version_record!(rev)
         end
 
         # Clears old revisions if a limit is set with the :limit option in <tt>acts_as_versioned</tt>.
@@ -44,7 +61,7 @@ module ActiveRecord
           return if self.class.max_version_limit == 0
           excess_baggage = send(self.class.version_column).to_i - self.class.max_version_limit
           if excess_baggage > 0
-            self.class.versioned_class.where("#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id).delete_all
+            self.class.versioned_class.where(self.class.versioned_foreign_key => id, self.class.version_column => ..excess_baggage).delete_all
           end
         end
 
@@ -65,13 +82,16 @@ module ActiveRecord
 
         # Reverts a model to a given version and saves the model.
         # Takes either a version number or an instance of the versioned model
+        # A revert always creates a new version with the next version number.
+        # Returns false if the version is not found or the record can't be saved.
         def revert_to!(version)
-          if revert_to(version)
-            set_new_version
-            save_without_revision
-            save_version(true, false, @reverted_from)
-          else
-            false
+          return false unless revert_to(version)
+
+          self.class.transaction do
+            send("#{self.class.version_column}=", next_version)
+            saved = save_without_revision
+            save_version(true, false, @reverted_from) if saved
+            saved
           end
         end
 
@@ -92,6 +112,22 @@ module ActiveRecord
               save!
             end
           end
+        end
+
+        # True while Version#restore saves this record, false otherwise.
+        # Lets the application tell a restore apart from a normal create in its own callbacks, e.g. to record
+        # the restoring user instead of the value copied from the version.
+        def restoring?
+          !!@restoring
+        end
+
+        # Marks the record as being restored for the duration of the block. Used by Version#restore.
+        def while_restoring # :nodoc:
+          previous = @restoring
+          @restoring = true
+          yield
+        ensure
+          @restoring = previous
         end
 
         def altered?
@@ -117,6 +153,8 @@ module ActiveRecord
 
         # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
         def save_version?
+          return false if self.class.without_revision?
+
           version_condition_met? && altered?
         end
 
@@ -153,12 +191,10 @@ module ActiveRecord
           self.class.without_locking(&block)
         end
 
-        def empty_callback() end #:nodoc:
-
         def find_newest_version
           return nil if self.id.nil?
 
-          self.class.versioned_class.where("#{self.class.versioned_foreign_key} = #{self.id}").order("#{self.version_column} DESC").first
+          self.class.versioned_class.where(self.class.versioned_foreign_key => id).order(self.class.version_column => :desc).first
         end
 
         def highest_version
@@ -168,7 +204,7 @@ module ActiveRecord
         def find_version(version)
           return nil if self.id.nil?
 
-          ret = self.class.versioned_class.where("#{self.class.versioned_foreign_key} = #{self.id} and #{self.class.version_column}=#{version}").first
+          ret = self.class.versioned_class.find_by(self.class.versioned_foreign_key => id, self.class.version_column => version)
           raise "find_version: version #{version} not found in database" unless ret
           ret
         end
@@ -176,8 +212,20 @@ module ActiveRecord
         protected
         # sets the new version before saving
         def set_new_version
+          return if self.class.without_revision?
+
           @saving_version = new_record? || save_version?
           self.send("#{self.class.version_column}=", next_version) if new_record? || save_version?
+        end
+
+        # Saves the version record. Raises ActiveRecord::RecordNotSaved if it can't be saved (e.g. a validation on the
+        # versioned class fails), so the surrounding save/destroy of the original record is rolled back.
+        def save_version_record!(rev)
+          return true if rev.save
+
+          raise ActiveRecord::RecordNotSaved.new(
+            "Couldn't save version #{rev.send(self.class.version_column)} of #{self.class.name} id = #{id}: " \
+            "#{rev.errors.full_messages.join(', ')}", rev)
         end
 
         # Gets the next available version for the current record, or 1 for a new record
@@ -197,51 +245,49 @@ module ActiveRecord
           end
 
           def restore_deleted(id)
-            version_record = versioned_class.where("#{versioned_foreign_key} = #{id}").order("#{self.version_column} DESC").first
+            version_record = versioned_class.where(versioned_foreign_key => id).order(version_column => :desc).first!
             version_record.restore
           end
 
           def restore_deleted_version(id, version)
-            version_record = versioned_class.where("#{versioned_foreign_key} = #{id} and #{self.version_column} = #{version}").first
+            version_record = versioned_class.find_by!(versioned_foreign_key => id, version_column => version)
             version_record.restore
           end
 
-          # Executes the block with the versioning callbacks disabled.
+          # Executes the block with versioning disabled for this class (and its subclasses).
+          # Only affects the current thread (or fiber, see config.active_support.isolation_level); may be nested.
           #
           #   Foo.without_revision do
           #     @foo.save
           #   end
           #
-          def without_revision(&block)
-            class_eval do
-              CALLBACKS.each do |attr_name|
-                alias_method "orig_#{attr_name}".to_sym, attr_name
-                alias_method attr_name, :empty_callback
-              end
-            end
-            block.call
+          def without_revision
+            previous = ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY]
+            ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY] = [*previous, self]
+            yield
           ensure
-            class_eval do
-              CALLBACKS.each do |attr_name|
-                alias_method attr_name, "orig_#{attr_name}".to_sym
-              end
-            end
+            ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY] = previous
           end
 
-          # Turns off optimistic locking for the duration of the block
+          # True while inside a without_revision block for this class (or a superclass) in the current thread.
+          def without_revision?
+            classes = ActiveSupport::IsolatedExecutionState[WITHOUT_REVISION_KEY]
+            !classes.nil? && classes.any? { |klass| self <= klass }
+          end
+
+          # Turns off optimistic locking for all models for the duration of the block.
+          # Only affects the current thread (or fiber, see config.active_support.isolation_level); may be nested.
           #
           #   Foo.without_locking do
           #     @foo.save
           #   end
           #
-          def without_locking(&block)
-            current = ActiveRecord::Base.lock_optimistically
-            ActiveRecord::Base.lock_optimistically = false if current
-            begin
-              block.call
-            ensure
-              ActiveRecord::Base.lock_optimistically = true if current
-            end
+          def without_locking
+            previous = ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY]
+            ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY] = true
+            yield
+          ensure
+            ActiveSupport::IsolatedExecutionState[WITHOUT_LOCKING_KEY] = previous
           end
 
           # Rake migration task to create the versioned table using options passed to acts_as_versioned

@@ -70,7 +70,6 @@ module ActiveRecord #:nodoc:
     #
     # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
     module Versioned
-      CALLBACKS = [:set_new_version, :save_version, :save_version?]
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
@@ -206,12 +205,12 @@ module ActiveRecord #:nodoc:
             has_many :versions, **version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= order('#{version_column}').first
+                @earliest ||= order(#{version_column.to_sym.inspect} => :asc).first
               end
 
               # find latest version of this record
               def latest
-                @latest ||= order('#{version_column} desc').first
+                @latest ||= order(#{version_column.to_sym.inspect} => :desc).first
               end
             end
             before_save  :set_new_version
@@ -233,17 +232,38 @@ module ActiveRecord #:nodoc:
             def self.reloadable? ; false ; end
             # find first version before the given version
             def self.before(version)
-              where("#{original_class.versioned_foreign_key} = ? and #{original_class.version_column} < ?",
-                    version.send(original_class.versioned_foreign_key), version.version)
-                .order("#{original_class.version_column} desc").first
+              where(original_class.versioned_foreign_key => version.send(original_class.versioned_foreign_key),
+                    original_class.version_column => ...version.send(original_class.version_column))
+                .order(original_class.version_column => :desc).first
             end
 
             # find first version after the given version.
             def self.after(version)
-              where("#{original_class.versioned_foreign_key} = ? and #{original_class.version_column} > ?",
-                    version.send(original_class.versioned_foreign_key), version.version)
-                .order(original_class.version_column).first
+              where(original_class.versioned_foreign_key => version.send(original_class.versioned_foreign_key))
+                .where(arel_table[original_class.version_column].gt(version.send(original_class.version_column)))
+                .order(original_class.version_column => :asc).first
             end
+
+            # sorts by original record, then version
+            #   Page::Version.ordered
+            #   page.versions.ordered
+            scope :ordered, -> { order(original_class.versioned_foreign_key => :asc, original_class.version_column => :asc) }
+
+            # deletion versions of records that are deleted and not restored (the newest version is a deletion),
+            # one per record
+            #   Page::Version.currently_deleted
+            #   Page::Version.currently_deleted.where(page_id: id).first&.restore
+            # SQL: ... WHERE deleted_in_original_table = TRUE AND NOT EXISTS (newer version of the same record)
+            scope :currently_deleted, -> {
+              fk = original_class.versioned_foreign_key
+              vc = original_class.version_column
+              newer = arel_table.alias('newer_versions')
+              newer_version_exists = Arel::SelectManager.new(newer)
+                                       .project(Arel.sql('1'))
+                                       .where(newer[fk].eq(arel_table[fk]).and(newer[vc].gt(arel_table[vc])))
+                                       .exists
+              where(original_class.deleted_in_original_table_flag => true).where(newer_version_exists.not)
+            }
 
             def previous
               self.class.before(self)
@@ -275,18 +295,24 @@ module ActiveRecord #:nodoc:
               # executed.
               # Some ActiveRecord-Methods (for example #ActiveRecord::Base::AutosaveAssociation#save_collection_association) try to use ActiveRecord methods
               # with these Relations, and if these Relations have been converted to Arrays, these calls fail with an Exception
-              new_version_number = self.class.where(self.original_class.versioned_foreign_key => id).order('id desc').first.send(restored_record.version_column).to_i + 1
+              new_version_number = self.class.where(self.original_class.versioned_foreign_key => id)
+                                             .maximum(self.original_class.version_column).to_i + 1
               restored_record.send("#{restored_record.version_column}=", new_version_number)
-              unless restored_record.save_without_revision(perform_validation)
-                raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
+              # one transaction, so the record is not restored if its version can't be saved
+              self.class.transaction do
+                # restoring? is true for the callbacks of the restored record while it and its version are saved
+                restored_record.while_restoring do
+                  unless restored_record.save_without_revision(perform_validation)
+                    raise RuntimeError.new("Couldn't restore the record, id = #{id} class = #{self.class.name}")
+                  end
+                  restored_record.save_version(true, false, self.send(self.original_class.version_column))
+                end
               end
-              restored_record.save_version(true, false, self.send(self.original_class.version_column))
             end
 
             def record_restored?
               self.read_attribute(self.original_class.record_restored_column) != nil
             end
-            alias :record_restored :record_restored?
 
             def record_restored_from_version
               self.read_attribute(self.original_class.record_restored_column)
@@ -313,3 +339,4 @@ module ActiveRecord #:nodoc:
 end
 
 ActiveRecord::Base.send :include, ActiveRecord::Acts::Versioned
+ActiveRecord::Base.singleton_class.prepend ActiveRecord::Acts::Versioned::ActMethods::LockingOverride

@@ -350,28 +350,28 @@ class VersionedTest < ActiveSupport::TestCase
   end
 
   def test_without_locking_temporarily_disables_optimistic_locking
-    enabled1 = false
+    enabled1 = nil
     block_called = false
-    
-    ActiveRecord::Base.lock_optimistically = true
+
+    assert LockedPage.locking_enabled?
     LockedPage.without_locking do
-      enabled1 = ActiveRecord::Base.lock_optimistically
+      enabled1 = LockedPage.locking_enabled?
       block_called = true
     end
-    enabled2 = ActiveRecord::Base.lock_optimistically
-    
+
     assert block_called
     assert !enabled1
-    assert enabled2
+    assert LockedPage.locking_enabled?
+    assert ActiveRecord::Base.lock_optimistically
   end
-  
+
   def test_without_locking_reverts_optimistic_locking_settings_if_block_raises_exception
     assert_raises(RuntimeError) do
       LockedPage.without_locking do
         raise RuntimeError, "oh noes"
       end
     end
-    assert ActiveRecord::Base.lock_optimistically
+    assert LockedPage.locking_enabled?
   end
 
   def test_deleted_in_original_table

@@ -1,10 +1,17 @@
 # rtiss_acts_as_versioned
 
-Simple versioning for ActiveRecord models. Every change to a record is saved as a
-copy in a separate history table.
+Simple versioning for ActiveRecord models. Every change to a record saves a **full copy of the
+record** in a separate history table (`Model::Version`). The data is stored many times over, which
+has advantages and disadvantages:
+
+* **Pro – traceability:** you can see exactly what a record looked like at any point in time.
+* **Pro – undo:** any earlier version can be restored. Deletions are versioned too, so destroyed
+  records can be restored (with the same `id`).
+* **Con – space:** each version is a complete row, so the history table grows with every change.
+  Use `:limit`, `:if` / `:if_changed` or `:non_versioned_columns` to keep it smaller.
 
 This is a fork of [technoweenie/acts_as_versioned](https://github.com/technoweenie/acts_as_versioned)
-(Rick Olson, 2005), used by [TISS](https://tiss.tuwien.ac.at) (TU Wien). It adds a few changes on top
+(Rick Olson, 2005), used by the TISS-Team at [TU Wien](https://www.tuwien.at/). It adds a few changes on top
 of the original. The most important one: **destroyed records stay in the history table and can be
 restored.**
 
@@ -16,13 +23,13 @@ restored.**
 | Gem version | Rails          | Ruby      |
 |-------------|----------------|-----------|
 | 0.9.x       | 4.x – 6.x      | 2.x       |
-| 0.10.x      | >= 7.1 (activerecord >= 7.1.6) | >= 3.1.6 |
+| >= 0.10     | >= 7.1 (activerecord >= 7.1.6) | >= 3.1.6 |
 
 ## Installation
 
 ```ruby
 # Gemfile
-gem 'rtiss_acts_as_versioned', '~> 0.10.2'
+gem 'rtiss_acts_as_versioned', '~> 0.11'
 ```
 
 ---
@@ -54,6 +61,14 @@ In this fork:
 
 Note: `delete` / `delete_all` skip callbacks, so they do **not** create a deletion version.
 
+The deletion version is built from the **in-memory state** of the record when `after_destroy` runs.
+Attributes you assign in a `before_destroy` callback are therefore stored in the deletion version,
+without an extra `UPDATE` of the record. Use this e.g. to record who deleted it:
+
+```ruby
+before_destroy { self.changed_by = Current.user_id }   # ends up in the deletion version only
+```
+
 ### 3. Restoring destroyed records
 
 New methods let you bring a destroyed record back from its history:
@@ -66,13 +81,26 @@ New methods let you bring a destroyed record back from its history:
 A restore always creates a **new** version. That version stores, in the `record_restored`
 column, which version the record was restored from.
 
+The restored record is created with all attributes copied from the version. While `restore` saves
+it (and its new version), `restoring?` returns `true`, so your callbacks can tell a restore apart
+from a normal create, e.g. to record the restoring user instead of the copied value:
+
+```ruby
+before_create { self.changed_by = Current.user_id if changed_by.nil? || restoring? }
+```
+
+Outside of `restore`, `restoring?` is `false`, also after a failed restore.
+
 ### 4. `record_restored` column
 
 The column holds the version number the record was restored from (`restore`) or reverted to
 (`revert_to!`). It is `nil` for normal changes.
 
-* `Version#record_restored?` / `Version#record_restored` → `true`/`false`
-* `Version#record_restored_from_version` → `Integer` or `nil`
+* `Version#record_restored?` → `true`/`false`
+* `Version#record_restored_from_version` / `Version#record_restored` (the column) → `Integer` or `nil`
+
+In queries compare with `nil`, not with `false`: `where(record_restored: nil)` (normal changes) or
+`where.not(record_restored: nil)` (restores and reverts).
 
 ### 5. Version numbers only ever go up
 
@@ -80,7 +108,9 @@ In the original, `revert_to!(3)` set the record back to version number 3 and did
 new version. In the fork:
 
 * `revert_to!(n)` copies the data from version `n` and saves it as a **new version**
-  (`max + 1`), with `record_restored = n`;
+  (`max + 1`), with `record_restored = n`. This also applies when `:if` / `:if_changed` would
+  not create a version for a normal save. If the record can't be saved (validation), `revert_to!`
+  returns `false` and no version is written;
 * `restore` also always gives the record a new, higher version number;
 * the version column is **always separate from `lock_version`**. Do not set
   `:version_column => 'lock_version'`. Optimistic locking and versioning work side by side.
@@ -92,6 +122,10 @@ The history therefore has no gaps and is append-only (an audit trail).
 * `find_version(n)` – returns version `n`. Raises a `RuntimeError` if it does not exist.
 * `find_newest_version` – returns the newest version, including a deletion version.
 * `highest_version` – the highest version number, or `-1` if there is none or the record is unsaved.
+* `Version.ordered` – scope that sorts by original record (foreign key), then version, e.g.
+  `Page::Version.ordered` or `page.versions.ordered`.
+* `Version.currently_deleted` – scope with the deletion versions of all records that are deleted and
+  not restored, one per record (the newest version of the record is a deletion).
 
 ### 7. Other changes
 
@@ -212,7 +246,7 @@ id = page.id
 page.destroy
 Page.exists?(id)                         # => false
 
-v = Page::Version.where(page_id: id).order(:version).last
+v = Page::Version.where(page_id: id).ordered.last
 v.version                                # => 4
 v.deleted_in_original_table              # => true
 v.original_record_exists?                # => false
@@ -223,10 +257,28 @@ Page.restore_deleted(id)                 # restore from the newest version
 
 page = Page.find(id)                     # same id as before
 page.version                             # => 5
-page.find_version(5).record_restored     # => true
+page.find_version(5).record_restored?    # => true
+page.find_version(5).record_restored_from_version  # => 4
 ```
 
+Finding deleted records that have not been restored:
+
+```ruby
+Page::Version.currently_deleted                            # all deleted pages (one deletion version each)
+Page::Version.currently_deleted.ordered                    # sorted by page_id
+Page::Version.currently_deleted.where(page_id: id).first   # deletion version of one page, or nil
+Page::Version.currently_deleted.find_each(&:restore)       # restore all of them
+```
+
+`where(deleted_in_original_table: true)` alone is not enough: the deletion version keeps the flag
+after a restore, so it also returns restored records, and records deleted more than once several times.
+
 `restore` raises a `RuntimeError` if the original record still exists.
+`restore_deleted` / `restore_deleted_version` raise `ActiveRecord::RecordNotFound` if there is no matching version.
+
+If a version record can't be saved (e.g. a validation on the versioned class fails), `save`, `save!`,
+`destroy` and `restore` raise `ActiveRecord::RecordNotSaved` (with the version as `error.record`)
+and the change to the original record is rolled back.
 
 ### 7. Saving without a new version
 
@@ -240,10 +292,11 @@ Page.without_revision do
 end
 ```
 
-> ⚠️ `without_revision` swaps the callback methods **on the class** for the length of the block.
-> This is not thread-safe. Other threads that save the same model during the block will not
-> get versions either. `without_locking` likewise changes `ActiveRecord::Base.lock_optimistically`
-> globally.
+`without_revision` disables versioning for the class and its subclasses. `without_locking` disables
+optimistic locking for all models. Both only affect the current thread (or fiber, depending on
+`config.active_support.isolation_level`) and may be nested. `Page.without_revision?` tells you
+whether you are inside such a block. `ActiveRecord::Base.lock_optimistically` itself is not
+changed by `without_locking`.
 
 ### 8. Options
 
@@ -284,6 +337,8 @@ The tests run against SQLite (`test/database.yml`).
 * `test/versioned_test.rb` – the original acts_as_versioned tests, adapted to the fork's behaviour
 * `test/tiss_test.rb` – the fork features (destroy, restore, `record_restored`, `find_version`, …),
   using the test model `GoodThing` (`name`, `why_good`), e.g. `GoodThing.create!(name: 'Sun', why_good: 'Keeps us warm')`
+* `test/callbacks_test.rb` – contracts for application callbacks: `before_destroy` attributes in the
+  deletion version, `restoring?` during `restore`, using the test model `AuditedThing` (`name`, `changed_by`)
 * `test/migration_test.rb` – `create_versioned_table`
 
 ## Release

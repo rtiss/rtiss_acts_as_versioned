@@ -171,6 +171,78 @@ class TissTest < ActiveSupport::TestCase
     assert_equal 1, restored.find_version(4).record_restored_from_version
   end
 
+  # record_restored is the plain column (version number or nil), record_restored? the boolean
+  def test_record_restored_returns_version_number
+    object = create_object('Clouds')
+    edit_object(object.id, 'Fog')
+    object.destroy
+    GoodThing.restore_deleted_version(object.id, 1)
+
+    restored_version = GoodThing.find(object.id).find_version(4)
+    assert_equal 1, restored_version.record_restored
+    assert_equal true, restored_version.record_restored?
+    assert_equal 1, restored_version.record_restored_from_version
+
+    normal_version = GoodThing.find(object.id).find_version(2)
+    assert_nil normal_version.record_restored
+    assert_equal false, normal_version.record_restored?
+    assert_nil normal_version.record_restored_from_version
+  end
+
+  # the new version number must come from the highest version, not from the version row with the highest id
+  def test_restore_uses_highest_version_not_highest_id
+    object = create_object('Stars')
+    edit_object(object.id, 'Planets')
+    object.destroy
+    # e.g. an old version imported later: highest id, low version number
+    GoodThing::Version.create!(good_thing_id: object.id, version: 0, name: 'Imported')
+
+    GoodThing.restore_deleted_version(object.id, 2)
+    assert_equal 4, GoodThing.find(object.id).version
+    assert_equal [0, 1, 2, 3, 4], GoodThing::Version.where(good_thing_id: object.id).order(:version).pluck(:version)
+  end
+
+  def test_ordered_scope_sorts_by_record_then_version
+    first = create_object('Alpha')
+    second = create_object('Beta')
+    edit_object(first.id, 'Alpha2')
+    edit_object(second.id, 'Beta2')
+    edit_object(first.id, 'Alpha3')
+
+    ids = [first.id, second.id]
+    expected = [[first.id, 1], [first.id, 2], [first.id, 3], [second.id, 1], [second.id, 2]]
+    assert_equal expected, GoodThing::Version.where(good_thing_id: ids).ordered.pluck(:good_thing_id, :version)
+    assert_equal [1, 2, 3], first.versions.ordered.pluck(:version)
+    assert_equal 3, GoodThing::Version.where(good_thing_id: first.id).ordered.last.version
+  end
+
+  def test_currently_deleted
+    deleted = create_object('Deleted')
+    deleted.destroy
+
+    restored = create_object('Restored')
+    restored.destroy
+    GoodThing.restore_deleted(restored.id)
+
+    deleted_twice = create_object('DeletedTwice')
+    deleted_twice.destroy
+    GoodThing.restore_deleted(deleted_twice.id)
+    GoodThing.find(deleted_twice.id).destroy
+
+    never_deleted = create_object('NeverDeleted')
+
+    ids = [deleted.id, restored.id, deleted_twice.id, never_deleted.id]
+    result = GoodThing::Version.currently_deleted.where(good_thing_id: ids).ordered
+    assert_equal [[deleted.id, 2], [deleted_twice.id, 4]], result.pluck(:good_thing_id, :version)
+    assert result.all?(&:deleted_in_original_table)
+
+    # usable to restore
+    result.find_each(&:restore)
+    assert GoodThing.exists?(deleted.id)
+    assert GoodThing.exists?(deleted_twice.id)
+    assert_empty GoodThing::Version.currently_deleted.where(good_thing_id: ids)
+  end
+
   def test_destroy_unsaved_record
     object = GoodThing.new(name: "Never saved")
     assert_nothing_raised { object.destroy }
