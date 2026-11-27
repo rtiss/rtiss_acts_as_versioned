@@ -23,13 +23,13 @@ restored.**
 | Gem version | Rails          | Ruby      |
 |-------------|----------------|-----------|
 | 0.9.x       | 4.x – 6.x      | 2.x       |
-| 0.10.x      | >= 7.1 (activerecord >= 7.1.6) | >= 3.1.6 |
+| >= 0.10     | >= 7.1 (activerecord >= 7.1.6) | >= 3.1.6 |
 
 ## Installation
 
 ```ruby
 # Gemfile
-gem 'rtiss_acts_as_versioned', '~> 0.10.2'
+gem 'rtiss_acts_as_versioned', '~> 0.11'
 ```
 
 ---

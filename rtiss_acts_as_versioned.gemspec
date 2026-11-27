@@ -12,20 +12,21 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'rtiss_acts_as_versioned'
-  s.version           = '0.10.3'
-  s.date              = '2026-11-26'
+  s.version           = '0.11.0'
+  s.date              = '2026-11-27'
   s.rubyforge_project = 'rtiss_acts_as_versioned'
   s.summary     = "Add simple versioning to ActiveRecord models (TISS version)."
   s.description = "Add simple versioning to ActiveRecord models (TISS version).
 
-Each model has a to-many model named mymodel_h which records all changes 
-(including destroys but not deletes) made to the model. This is the version
-used by http://tiss.tuwien.ac.at and substantially differs from the original
-version. If you want to use acts_as_versioned in your project we recommend
-to use technoweenie's version (can be found also on github)"
+Every change to a record saves a full copy of the record in a separate history
+table (Model::Version). Destroys are versioned too (deletes are not), so destroyed
+records can be restored with the same id.
+
+This fork is used by the TISS-Team at TU Wien and substantially differs from the
+original. If you need a general-purpose versioning gem, consider technoweenie's
+acts_as_versioned (on GitHub) or one of the actively maintained alternatives."
 
   s.authors  = ["Rick Olson", "Johannes Thoma", "Igor Jancev"]
-  s.email    = 'igor.jancev@tuwien.ac.at'
   s.homepage = 'http://github.com/rtiss/rtiss_acts_as_versioned'
   s.require_paths = ["lib"]
   s.rdoc_options = ["--charset=UTF-8"]
@@ -54,6 +55,7 @@ to use technoweenie's version (can be found also on github)"
     rtiss_acts_as_versioned.gemspec
     test/abstract_unit.rb
     test/database.yml
+    test/failed_version_save_test.rb
     test/fixtures/authors.yml
     test/fixtures/good_thing.rb
     test/fixtures/landmark.rb
@@ -67,9 +69,12 @@ to use technoweenie's version (can be found also on github)"
     test/fixtures/pages_h.yml
     test/fixtures/widget.rb
     test/migration_test.rb
+    test/revert_test.rb
     test/schema.rb
+    test/sql_injection_test.rb
     test/tiss_test.rb
     test/versioned_test.rb
+    test/without_revision_and_locking_test.rb
   ]
   # = MANIFEST =
 
