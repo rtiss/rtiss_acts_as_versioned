@@ -202,6 +202,20 @@ class TissTest < ActiveSupport::TestCase
     assert_equal [0, 1, 2, 3, 4], GoodThing::Version.where(good_thing_id: object.id).order(:version).pluck(:version)
   end
 
+  def test_ordered_scope_sorts_by_record_then_version
+    first = create_object('Alpha')
+    second = create_object('Beta')
+    edit_object(first.id, 'Alpha2')
+    edit_object(second.id, 'Beta2')
+    edit_object(first.id, 'Alpha3')
+
+    ids = [first.id, second.id]
+    expected = [[first.id, 1], [first.id, 2], [first.id, 3], [second.id, 1], [second.id, 2]]
+    assert_equal expected, GoodThing::Version.where(good_thing_id: ids).ordered.pluck(:good_thing_id, :version)
+    assert_equal [1, 2, 3], first.versions.ordered.pluck(:version)
+    assert_equal 3, GoodThing::Version.where(good_thing_id: first.id).ordered.last.version
+  end
+
   def test_destroy_unsaved_record
     object = GoodThing.new(name: "Never saved")
     assert_nothing_raised { object.destroy }

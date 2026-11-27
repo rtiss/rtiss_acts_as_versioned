@@ -97,6 +97,8 @@ The history therefore has no gaps and is append-only (an audit trail).
 * `find_version(n)` – returns version `n`. Raises a `RuntimeError` if it does not exist.
 * `find_newest_version` – returns the newest version, including a deletion version.
 * `highest_version` – the highest version number, or `-1` if there is none or the record is unsaved.
+* `Version.ordered` – scope that sorts by original record (foreign key), then version, e.g.
+  `Page::Version.ordered` or `page.versions.ordered`.
 
 ### 7. Other changes
 
@@ -217,7 +219,7 @@ id = page.id
 page.destroy
 Page.exists?(id)                         # => false
 
-v = Page::Version.where(page_id: id).order(:version).last
+v = Page::Version.where(page_id: id).ordered.last
 v.version                                # => 4
 v.deleted_in_original_table              # => true
 v.original_record_exists?                # => false

@@ -244,6 +244,11 @@ module ActiveRecord #:nodoc:
                 .order(original_class.version_column => :asc).first
             end
 
+            # sorts by original record, then version
+            #   Page::Version.ordered
+            #   page.versions.ordered
+            scope :ordered, -> { order(original_class.versioned_foreign_key => :asc, original_class.version_column => :asc) }
+
             def previous
               self.class.before(self)
             end
