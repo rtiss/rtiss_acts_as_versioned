@@ -54,8 +54,10 @@ acts_as_versioned (on GitHub) or one of the actively maintained alternatives."
     mise.toml.example
     rtiss_acts_as_versioned.gemspec
     test/abstract_unit.rb
+    test/callbacks_test.rb
     test/database.yml
     test/failed_version_save_test.rb
+    test/fixtures/audited_thing.rb
     test/fixtures/authors.yml
     test/fixtures/good_thing.rb
     test/fixtures/landmark.rb
