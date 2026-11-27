@@ -171,6 +171,24 @@ class TissTest < ActiveSupport::TestCase
     assert_equal 1, restored.find_version(4).record_restored_from_version
   end
 
+  # record_restored is the plain column (version number or nil), record_restored? the boolean
+  def test_record_restored_returns_version_number
+    object = create_object('Clouds')
+    edit_object(object.id, 'Fog')
+    object.destroy
+    GoodThing.restore_deleted_version(object.id, 1)
+
+    restored_version = GoodThing.find(object.id).find_version(4)
+    assert_equal 1, restored_version.record_restored
+    assert_equal true, restored_version.record_restored?
+    assert_equal 1, restored_version.record_restored_from_version
+
+    normal_version = GoodThing.find(object.id).find_version(2)
+    assert_nil normal_version.record_restored
+    assert_equal false, normal_version.record_restored?
+    assert_nil normal_version.record_restored_from_version
+  end
+
   # the new version number must come from the highest version, not from the version row with the highest id
   def test_restore_uses_highest_version_not_highest_id
     object = create_object('Stars')

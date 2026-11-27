@@ -4,7 +4,7 @@ Simple versioning for ActiveRecord models. Every change to a record is saved as 
 copy in a separate history table.
 
 This is a fork of [technoweenie/acts_as_versioned](https://github.com/technoweenie/acts_as_versioned)
-(Rick Olson, 2005), used by [TISS](https://tiss.tuwien.ac.at) (TU Wien). It adds a few changes on top
+(Rick Olson, 2005), used by the TISS-Team at [TU Wien](https://www.tuwien.at/). It adds a few changes on top
 of the original. The most important one: **destroyed records stay in the history table and can be
 restored.**
 
@@ -71,8 +71,11 @@ column, which version the record was restored from.
 The column holds the version number the record was restored from (`restore`) or reverted to
 (`revert_to!`). It is `nil` for normal changes.
 
-* `Version#record_restored?` / `Version#record_restored` → `true`/`false`
-* `Version#record_restored_from_version` → `Integer` or `nil`
+* `Version#record_restored?` → `true`/`false`
+* `Version#record_restored_from_version` / `Version#record_restored` (the column) → `Integer` or `nil`
+
+In queries compare with `nil`, not with `false`: `where(record_restored: nil)` (normal changes) or
+`where.not(record_restored: nil)` (restores and reverts).
 
 ### 5. Version numbers only ever go up
 
@@ -225,7 +228,8 @@ Page.restore_deleted(id)                 # restore from the newest version
 
 page = Page.find(id)                     # same id as before
 page.version                             # => 5
-page.find_version(5).record_restored     # => true
+page.find_version(5).record_restored?    # => true
+page.find_version(5).record_restored_from_version  # => 4
 ```
 
 `restore` raises a `RuntimeError` if the original record still exists.

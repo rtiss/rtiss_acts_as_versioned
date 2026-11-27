@@ -289,7 +289,6 @@ module ActiveRecord #:nodoc:
             def record_restored?
               self.read_attribute(self.original_class.record_restored_column) != nil
             end
-            alias :record_restored :record_restored?
 
             def record_restored_from_version
               self.read_attribute(self.original_class.record_restored_column)
