@@ -99,6 +99,8 @@ The history therefore has no gaps and is append-only (an audit trail).
 * `highest_version` – the highest version number, or `-1` if there is none or the record is unsaved.
 * `Version.ordered` – scope that sorts by original record (foreign key), then version, e.g.
   `Page::Version.ordered` or `page.versions.ordered`.
+* `Version.currently_deleted` – scope with the deletion versions of all records that are deleted and
+  not restored, one per record (the newest version of the record is a deletion).
 
 ### 7. Other changes
 
@@ -233,6 +235,18 @@ page.version                             # => 5
 page.find_version(5).record_restored?    # => true
 page.find_version(5).record_restored_from_version  # => 4
 ```
+
+Finding deleted records that have not been restored:
+
+```ruby
+Page::Version.currently_deleted                            # all deleted pages (one deletion version each)
+Page::Version.currently_deleted.ordered                    # sorted by page_id
+Page::Version.currently_deleted.where(page_id: id).first   # deletion version of one page, or nil
+Page::Version.currently_deleted.find_each(&:restore)       # restore all of them
+```
+
+`where(deleted_in_original_table: true)` alone is not enough: the deletion version keeps the flag
+after a restore, so it also returns restored records, and records deleted more than once several times.
 
 `restore` raises a `RuntimeError` if the original record still exists.
 

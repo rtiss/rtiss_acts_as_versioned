@@ -216,6 +216,33 @@ class TissTest < ActiveSupport::TestCase
     assert_equal 3, GoodThing::Version.where(good_thing_id: first.id).ordered.last.version
   end
 
+  def test_currently_deleted
+    deleted = create_object('Deleted')
+    deleted.destroy
+
+    restored = create_object('Restored')
+    restored.destroy
+    GoodThing.restore_deleted(restored.id)
+
+    deleted_twice = create_object('DeletedTwice')
+    deleted_twice.destroy
+    GoodThing.restore_deleted(deleted_twice.id)
+    GoodThing.find(deleted_twice.id).destroy
+
+    never_deleted = create_object('NeverDeleted')
+
+    ids = [deleted.id, restored.id, deleted_twice.id, never_deleted.id]
+    result = GoodThing::Version.currently_deleted.where(good_thing_id: ids).ordered
+    assert_equal [[deleted.id, 2], [deleted_twice.id, 4]], result.pluck(:good_thing_id, :version)
+    assert result.all?(&:deleted_in_original_table)
+
+    # usable to restore
+    result.find_each(&:restore)
+    assert GoodThing.exists?(deleted.id)
+    assert GoodThing.exists?(deleted_twice.id)
+    assert_empty GoodThing::Version.currently_deleted.where(good_thing_id: ids)
+  end
+
   def test_destroy_unsaved_record
     object = GoodThing.new(name: "Never saved")
     assert_nothing_raised { object.destroy }

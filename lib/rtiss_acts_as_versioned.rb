@@ -249,6 +249,22 @@ module ActiveRecord #:nodoc:
             #   page.versions.ordered
             scope :ordered, -> { order(original_class.versioned_foreign_key => :asc, original_class.version_column => :asc) }
 
+            # deletion versions of records that are deleted and not restored (the newest version is a deletion),
+            # one per record
+            #   Page::Version.currently_deleted
+            #   Page::Version.currently_deleted.where(page_id: id).first&.restore
+            # SQL: ... WHERE deleted_in_original_table = TRUE AND NOT EXISTS (newer version of the same record)
+            scope :currently_deleted, -> {
+              fk = original_class.versioned_foreign_key
+              vc = original_class.version_column
+              newer = arel_table.alias('newer_versions')
+              newer_version_exists = Arel::SelectManager.new(newer)
+                                       .project(Arel.sql('1'))
+                                       .where(newer[fk].eq(arel_table[fk]).and(newer[vc].gt(arel_table[vc])))
+                                       .exists
+              where(original_class.deleted_in_original_table_flag => true).where(newer_version_exists.not)
+            }
+
             def previous
               self.class.before(self)
             end
